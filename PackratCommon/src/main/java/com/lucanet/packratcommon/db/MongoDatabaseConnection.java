@@ -23,15 +23,18 @@ import java.util.stream.Collectors;
 
 @Service
 class MongoDatabaseConnection implements DatabaseConnection {
-
+  // =========================== Class Variables ===========================79
+  // ============================ Class Methods ============================79
+  // ============================   Variables    ===========================79
   private final Logger        logger;
   private final MongoDatabase healthCheckDB;
 
+  // ============================  Constructors  ===========================79
   public MongoDatabaseConnection(
-      @Value("${packrat.persister.url}") String dbURL,
-      @Value("${packrat.persister.port}") int dbPort,
-      @Value("${packrat.persister.username}") String username,
-      @Value("${packrat.persister.password}") String password
+      @Value("${packrat.db.url}") String dbURL,
+      @Value("${packrat.db.port}") int dbPort,
+      @Value("${packrat.db.username}") String username,
+      @Value("${packrat.db.password}") String password
   ) {
     logger = LoggerFactory.getLogger(MongoDatabaseConnection.class);
     logger.info("Building CouchDB connection to {}:{}@{}:{}", username, password, dbURL, dbPort);
@@ -44,6 +47,7 @@ class MongoDatabaseConnection implements DatabaseConnection {
     this.healthCheckDB = mongoClient.getDatabase("packrat_healthcheck");
   }
 
+  // ============================ Public Methods ===========================79
   @Override
   public <T> void persistRecord(String topicName, HealthCheckHeader healthCheckHeader, T record) throws IllegalArgumentException {
     HealthCheckRecord healthCheckRecord = new HealthCheckRecord<>(healthCheckHeader, record);
@@ -187,4 +191,7 @@ class MongoDatabaseConnection implements DatabaseConnection {
                 .get(HealthCheckRecord.SYSTEM_UUID, List.class)
         ));
   }
+
+  // ========================== Protected Methods ==========================79
+  // =========================== Private Methods ===========================79
 }

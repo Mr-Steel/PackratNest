@@ -23,15 +23,19 @@ import java.util.Map;
 @EnableAutoConfiguration
 @ComponentScan({"com.lucanet.packratcollector", "com.lucanet.packratcommon"})
 public class PackratCollector implements ApplicationRunner {
+  // =========================== Class Variables ===========================79
+  // ============================ Class Methods ============================79
   public static void main(String[] args) {
     new SpringApplicationBuilder(PackratCollector.class)
         .web(false)
         .run(args);
   }
 
+  // ============================   Variables    ===========================79
   private final Logger logger;
   private final List<MessageConsumer> messageConsumerList;
 
+  // ============================  Constructors  ===========================79
   public PackratCollector(
       MessageConsumerFactory messageConsumerFactory,
       @Value("#{'${packrat.consumers.json.topics}'.split(',')}") List<String> jsonTopicsList,
@@ -46,6 +50,7 @@ public class PackratCollector implements ApplicationRunner {
     );
   }
 
+  // ============================ Public Methods ===========================79
   @Override
   public void run(ApplicationArguments args) throws Exception {
     logger.debug("Starting Packrat Collector Message Consumers...");
@@ -57,4 +62,7 @@ public class PackratCollector implements ApplicationRunner {
     logger.debug("Stopping Packrat Collector Message Consumers...");
     messageConsumerList.forEach(MessageConsumer::stop);
   }
+
+  // ========================== Protected Methods ==========================79
+  // =========================== Private Methods ===========================79
 }
