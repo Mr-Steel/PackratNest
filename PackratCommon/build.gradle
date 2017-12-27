@@ -1,0 +1,7 @@
+group 'com.lucanet'
+version '0.1-SNAPSHOT'
+
+dependencies {
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '3.6.0'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
+}

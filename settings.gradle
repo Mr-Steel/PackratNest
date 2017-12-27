@@ -2,4 +2,5 @@ rootProject.name = 'PackratNest'
 include 'PackratCollector'
 include 'PackratReporter'
 include 'PackratConfigServer'
+include 'PackratCommon'
 
