@@ -14,7 +14,7 @@ public class HealthCheckRecord<T> extends Document {
    * "serialId" key for usage in the MongoDB database.
    * @see HealthCheckHeader#serialId
    */
-  public static final String SERIAL_ID = "serialID";
+  public static final String SERIAL_ID = "serialId";
   /**
    * "systemUUID" key for usage in the MongoDB database.
    * @see HealthCheckHeader#systemUUID
