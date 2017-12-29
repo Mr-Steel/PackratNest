@@ -6,6 +6,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 
+/**
+ * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
+ */
 @Configuration
 @EnableAutoConfiguration
 @ComponentScan({"com.lucanet.packratreporter", "com.lucanet.packratcommon"})

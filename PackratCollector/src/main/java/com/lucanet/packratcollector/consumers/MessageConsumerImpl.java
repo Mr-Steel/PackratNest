@@ -17,20 +17,57 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Implementation of the {@link MessageConsumer} that utilizes a {@link KafkaConsumer} to consume HealthCheck messages.
+ * @param <T> The type of the HealthCheck message data.
+ * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
+ */
 public class MessageConsumerImpl<T> implements MessageConsumer {
   // =========================== Class Variables ===========================79
   // ============================ Class Methods ============================79
   // ============================   Variables    ===========================79
-  private final Logger                              logger;
-  private final String                              consumerName;
+  /**
+   * The logger for the MessageConsumerImpl instance.
+   */
+  private final Logger logger;
+  /**
+   * The name of the MessageConsumerImpl instance. This is used for identification purposes during logging.
+   */
+  private final String consumerName;
+  /**
+   * The Kafka message consumer for retrieving HealthCheck messages from the Kafka server.
+   */
   private final KafkaConsumer<HealthCheckHeader, T> kafkaConsumer;
-  private final AtomicBoolean                       isRunning;
-  private final List<String>                        topicsList;
-  private final ExecutorService                     threadPoolExecutor;
-  private final RecordPersister                     recordPersister;
-  private final Thread                              runnerThread;
+  /**
+   * Sentinel variable for maintaining the HealthCheck message retrieval loop active.
+   */
+  private final AtomicBoolean isRunning;
+  /**
+   * List of Kafka message topics that the {@link #kafkaConsumer} will subscribe to.
+   */
+  private final List<String> topicsList;
+  /**
+   * Thread pool for executing the HealthCheck message consumption callback separately from the message retrieval thread.
+   */
+  private final ExecutorService threadPoolExecutor;
+  /**
+   * Entity that will persist retrieved HealthCheck messages for later analysis.
+   */
+  private final RecordPersister recordPersister;
+  /**
+   * Thread that runs the HealthCheck message retrieval loop.
+   */
+  private final Thread runnerThread;
 
   // ============================  Constructors  ===========================79
+  /**
+   * Constructor for the message consumer.
+   * @param consumerName The name of the MessageConsumerImpl instance.
+   * @param kafkaConsumerProperties The Kafka message consumer for retrieving HealthCheck messages from the Kafka server.
+   * @param topicsList List of Kafka message topics that the {@link #kafkaConsumer} will subscribe to.
+   * @param threadPoolSize Number of threads that the {@link #threadPoolExecutor} will possess.
+   * @param recordPersister Entity that will persist retrieved HealthCheck messages for later analysis.
+   */
   MessageConsumerImpl(
       String consumerName,
       Properties kafkaConsumerProperties,
@@ -49,6 +86,9 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
   }
 
   // ============================ Public Methods ===========================79
+  /**
+   * Start the {@link #runnerThread} containing the message retrieval loop.
+   */
   @Override
   public void run() {
     logger.info("Starting consumer {}", consumerName);
@@ -56,6 +96,9 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
     logger.info("Consumer {} started", consumerName);
   }
 
+  /**
+   * Stop the {@link #runnerThread} containing the message retrieval loop.
+   */
   @Override
   public void stop() {
     logger.info("Shutting down consumer {}...", consumerName);
@@ -70,9 +113,13 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
 
   // ========================== Protected Methods ==========================79
   // =========================== Private Methods ===========================79
+  /**
+   * Execute the message retrieval sequence, including the retrieval loop.
+   */
   private void runConsumer() {
     kafkaConsumer.subscribe(topicsList);
     kafkaConsumer.poll(0L);
+    //Set the offsets for the partitions belonging to each HealthCheck topic
     topicsList.forEach(topic ->
         kafkaConsumer.partitionsFor(topic).forEach(partitionInfo -> {
           TopicPartition topicPartition = new TopicPartition(partitionInfo.topic(), partitionInfo.partition());
@@ -82,6 +129,8 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
         })
     );
     isRunning.set(true);
+
+    //Run the message retrieval loop
     while (isRunning.get()) {
       try {
         logger.debug("{} polling Kafka Server...", consumerName);
@@ -94,9 +143,15 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
         logger.error("Error polling messages in {}: {}", consumerName, e.getMessage());
       }
     }
+
+    //Message retrieval loop has been terminated - close the Kafka message consumer
     kafkaConsumer.close();
   }
 
+  /**
+   * Process a HealthCheck message that is obtained from the Kafka consumer.
+   * @param consumerRecord The received HealthCheck message.
+   */
   private void processMessage(ConsumerRecord<HealthCheckHeader, T> consumerRecord) {
     try {
       recordPersister.updateOffset(new TopicPartition(consumerRecord.topic(), consumerRecord.partition()), (consumerRecord.offset() + 1));
@@ -115,6 +170,10 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
     }
   }
 
+  /**
+   * Process an error that is thrown when processing a received HealthCheck message.
+   * @param e The thrown error.
+   */
   private void processError(Throwable e) {
     logger.error("Error in processing record in {}: {}", consumerName, e.getMessage());
   }

@@ -21,15 +21,49 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of {@link DatabaseConnection} utilizing MongoDB.
+ * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
+ */
 @Service
 class MongoDatabaseConnection implements DatabaseConnection {
   // =========================== Class Variables ===========================79
+  /**
+   * Name of the Offsets collection ("_offsets") in the MongoDB database
+   */
+  private static final String OFFSETS_COLLECTION_NAME = "_offsets";
+  /**
+   * "topic" field key for usage in the Offsets collection of the MongoDB database
+   */
+  private static final String OFFSETS_TOPIC_KEY = "topic";
+  /**
+   * "partition" field key for usage in the Offsets collection of the MongoDB database
+   */
+  private static final String OFFSETS_PARTITION_KEY = "partition";
+  /**
+   * "offset" field key for usage in the Offsets collection of the MongoDB database
+   */
+  private static final String OFFSETS_OFFSET_KEY = "offset";
+
   // ============================ Class Methods ============================79
   // ============================   Variables    ===========================79
-  private final Logger        logger;
+  /**
+   * The logger for the MongoDatabaseConnection instance.
+   */
+  private final Logger logger;
+  /**
+   * The MongoDB representation.
+   */
   private final MongoDatabase healthCheckDB;
 
   // ============================  Constructors  ===========================79
+  /**
+   * Database connection constructor.
+   * @param dbURL MongoDB instance's URL.
+   * @param dbPort MongoDB instance's port.
+   * @param username Username for logging in to interact with the MongoDB instance.
+   * @param password Password for logging in to interact with the MongoDB instance.
+   */
   public MongoDatabaseConnection(
       @Value("${packrat.db.url}") String dbURL,
       @Value("${packrat.db.port}") int dbPort,
@@ -48,26 +82,40 @@ class MongoDatabaseConnection implements DatabaseConnection {
   }
 
   // ============================ Public Methods ===========================79
+  /**
+   * Persist a HealthCheck record.
+   * @param healthCheckType The type of the HealthCheck record.
+   * @param healthCheckHeader The HealthCheck's metadata.
+   * @param record The HealthCheck record.
+   * @throws IllegalArgumentException Signifies that the HealthCheck type does not exist in the database.
+   */
   @Override
-  public <T> void persistRecord(String topicName, HealthCheckHeader healthCheckHeader, T record) throws IllegalArgumentException {
+  public <T> void persistRecord(String healthCheckType, HealthCheckHeader healthCheckHeader, T record) throws IllegalArgumentException {
     HealthCheckRecord healthCheckRecord = new HealthCheckRecord<>(healthCheckHeader, record);
     try {
-      healthCheckDB.getCollection(topicName, HealthCheckRecord.class).insertOne(healthCheckRecord);
+      healthCheckDB.getCollection(healthCheckType, HealthCheckRecord.class).insertOne(healthCheckRecord);
     } catch (MongoWriteException mwe) {
       if (mwe.getError().getCategory() == ErrorCategory.DUPLICATE_KEY) {
-        logger.warn("Cannot write message {} - entry already exists with this key for topic '{}'", healthCheckHeader, topicName);
+        logger.warn("Cannot write message {} - entry already exists with this key for topic '{}'", healthCheckHeader, healthCheckType);
       } else {
-        logger.error("Error writing message {} to topic '{}': {}", healthCheckHeader, topicName, mwe.getMessage());
+        logger.error("Error writing message {} to topic '{}': {}", healthCheckHeader, healthCheckType, mwe.getMessage());
       }
     }
   }
 
+  /**
+   * Get the message offset for the specified HealthCheck type and message partition.
+   * @param healthCheckType The specified HealthCheck type.
+   * @param partition The message partition for the HealthCheck type.
+   * @return The message offset.
+   * @throws IllegalArgumentException Signifies that the HealthCheck type does not exist in the database.
+   */
   @Override
-  public long getOffset(String topicName, int partition) throws IllegalArgumentException {
+  public long getOffset(String healthCheckType, int partition) throws IllegalArgumentException {
     MongoCollection<Document> collection = healthCheckDB.getCollection(OFFSETS_COLLECTION_NAME, Document.class);
     Document offsetDoc = collection.find(
         Filters.and(
-            Filters.eq(OFFSETS_TOPIC_KEY, topicName),
+            Filters.eq(OFFSETS_TOPIC_KEY, healthCheckType),
             Filters.eq(OFFSETS_PARTITION_KEY, partition)
         )
     ).first();
@@ -77,7 +125,7 @@ class MongoDatabaseConnection implements DatabaseConnection {
       //Place the base offset value for this topic/partition in the database to establish
       //an entry
       offsetDoc = new Document()
-          .append(OFFSETS_TOPIC_KEY, topicName)
+          .append(OFFSETS_TOPIC_KEY, healthCheckType)
           .append(OFFSETS_PARTITION_KEY, partition)
           .append(OFFSETS_OFFSET_KEY, 0L);
       collection.insertOne(offsetDoc);
@@ -85,53 +133,79 @@ class MongoDatabaseConnection implements DatabaseConnection {
     }
   }
 
+  /**
+   * Set the new message offset for the specified HealthCheck type and message partition.
+   * @param healthCheckType The specified HealthCheck type.
+   * @param partition The message partition for the HealthCheck type.
+   * @param newOffset The new message offset.
+   * @throws IllegalArgumentException Signifies that the HealthCheck type does not exist in the database.
+   */
   @Override
-  public void updateOffset(String topicName, int partition, long newOffset) throws IllegalArgumentException {
+  public void updateOffset(String healthCheckType, int partition, long newOffset) throws IllegalArgumentException {
     Document newOffsetDoc = new Document()
-        .append(OFFSETS_TOPIC_KEY, topicName)
+        .append(OFFSETS_TOPIC_KEY, healthCheckType)
         .append(OFFSETS_PARTITION_KEY, partition)
         .append(OFFSETS_OFFSET_KEY, newOffset);
 
     //Only update the offset if it is the highest value possible. FindOneAndReplace is an atomic
-    //update action, which will maintain thread safety
+    //update action, which will prevent race conditions with the MongoDB being pinged by multiple
+    //requests simultaneously
     Document updatedDoc = healthCheckDB.getCollection(OFFSETS_COLLECTION_NAME, Document.class)
         .findOneAndReplace(
             Filters.and(
-                Filters.eq(OFFSETS_TOPIC_KEY, topicName),
+                Filters.eq(OFFSETS_TOPIC_KEY, healthCheckType),
                 Filters.eq(OFFSETS_PARTITION_KEY, partition),
                 Filters.lt(OFFSETS_OFFSET_KEY, newOffset)
             ),
             newOffsetDoc
         );
     if (updatedDoc != null) {
-      logger.debug("Set new offset to {} for topic '{}' partition {}", newOffset, topicName, partition);
+      logger.debug("Set new offset to {} for topic '{}' partition {}", newOffset, healthCheckType, partition);
     }
   }
 
+  /**
+   * Request a list of HealthCheck types that the database persists. This will pull the names of all collections in the database.
+   * that don't match the value represented by {@link #OFFSETS_COLLECTION_NAME}.
+   * @return The list of persistable HealthCheck types.
+   */
   @Override
-  public List<String> getTopics() {
+  public List<String> getHealthCheckTypes() {
     return healthCheckDB.listCollections()
         .filter(Filters.ne("name", OFFSETS_COLLECTION_NAME))
         .map(document -> document.getString("name"))
         .into(new ArrayList<>());
   }
 
+  /**
+   * Request a list of all computer instances that have HealthCheck records stored for the specified HealthCheck type.
+   * @param healthCheckType The specified HealthCheck type.
+   * @return The list of relevant computers (in the form of UUID entities).
+   * @throws IllegalArgumentException Signifies that the HealthCheck type does not exist in the database.
+   */
   @Override
-  public List<String> getSystemsInTopic(String topicName) throws IllegalArgumentException {
-    if (getTopics().contains(topicName)) {
-      return healthCheckDB.getCollection(topicName, HealthCheckRecord.class)
+  public List<String> getSystemsInHealthCheckType(String healthCheckType) throws IllegalArgumentException {
+    if (getHealthCheckTypes().contains(healthCheckType)) {
+      return healthCheckDB.getCollection(healthCheckType, HealthCheckRecord.class)
           .distinct(HealthCheckRecord.SYSTEM_UUID, String.class)
           .into(new ArrayList<>());
     } else {
-      throw new IllegalArgumentException(String.format("Topic '%s' doesn't exist", topicName));
+      throw new IllegalArgumentException(String.format("Topic '%s' doesn't exist", healthCheckType));
     }
   }
 
+  /**
+   * Request a list of all sessions in which a computer has HealthCheck records stored for the specified HealthCheck type.
+   * @param healthCheckType The specified HealthCheck type.
+   * @param systemUUID The specified computer (in the form of a UUID entity).
+   * @return The list of sessions (in the form of timestamps representing seconds elapsed since the UNIX epoch).
+   * @throws IllegalArgumentException Signifies that the HealthCheck type does not exist in the database.
+   */
   @Override
   @SuppressWarnings("unchecked")
-  public List<Long> getSessionTimestamps(String topicName, String systemUUID) throws IllegalArgumentException {
-    if (getTopics().contains(topicName)) {
-      AggregateIterable<Document> iterable = healthCheckDB.getCollection(topicName)
+  public List<Long> getSessionTimestamps(String healthCheckType, String systemUUID) throws IllegalArgumentException {
+    if (getHealthCheckTypes().contains(healthCheckType)) {
+      AggregateIterable<Document> iterable = healthCheckDB.getCollection(healthCheckType)
           .aggregate(
               Arrays.asList(
                   Aggregates.match(Filters.eq(HealthCheckRecord.SYSTEM_UUID, systemUUID)),
@@ -146,27 +220,39 @@ class MongoDatabaseConnection implements DatabaseConnection {
           );
       return iterable.first().get(HealthCheckRecord.SESSION_TIMESTAMP, List.class);
     } else {
-      throw new IllegalArgumentException(String.format("Topic '%s' doesn't exist", topicName));
+      throw new IllegalArgumentException(String.format("Topic '%s' doesn't exist", healthCheckType));
     }
   }
 
+  /**
+   * Request a list of all HealthCheck records for a specified computer's session correlating to a HealthCheck type.
+   * @param healthCheckType The specified HealthCheck type.
+   * @param systemUUID The specified computer (in the form of a UUID entity).
+   * @param sessionTimestamp The specified session (in the form of a timestamp representing seconds elapsed since the UNIX epoch).
+   * @return The list of all HealthCheck records for the computer that occurred in the specified session.
+   * @throws IllegalArgumentException Signifies that the HealthCheck type does not exist in the database.
+   */
   @Override
-  public List<Map<String, Object>> getSessionHealthChecks(String topicName, String systemUUID, Long sessionTimestamp) throws IllegalArgumentException {
-    if (getTopics().contains(topicName)) {
-      return healthCheckDB.getCollection(topicName, Document.class)
+  public List<Map<String, Object>> getSessionHealthChecks(String healthCheckType, String systemUUID, Long sessionTimestamp) throws IllegalArgumentException {
+    if (getHealthCheckTypes().contains(healthCheckType)) {
+      return healthCheckDB.getCollection(healthCheckType, Document.class)
           .find(Filters.and(
               Filters.eq(HealthCheckRecord.SYSTEM_UUID, systemUUID),
               Filters.eq(HealthCheckRecord.SESSION_TIMESTAMP, sessionTimestamp)
           ), Document.class)
           .into(new ArrayList<>());
     } else {
-      throw new IllegalArgumentException(String.format("Topic '%s' doesn't exist", topicName));
+      throw new IllegalArgumentException(String.format("Topic '%s' doesn't exist", healthCheckType));
     }
   }
 
+  /**
+   * Request a map of all computer groups that have records in each HealthCheck type.
+   * @return The map of all computer groups present (in the form of a serial ID for each computer group).
+   */
   @Override
-  public Map<String, List<String>> getSerialIDS() {
-    return getTopics().stream()
+  public Map<String, List<String>> getSerialIds() {
+    return getHealthCheckTypes().stream()
         .collect(Collectors.toMap(
             topic -> topic,
             topic -> healthCheckDB.getCollection(topic)
@@ -175,16 +261,21 @@ class MongoDatabaseConnection implements DatabaseConnection {
         ));
   }
 
+  /**
+   * Request a map of all computers that have records in each HealthCheck type for a specified computer group.
+   * @param serialId The specified computer group (in the form of a serial ID).
+   * @return The map of all computers (in the form of UUID entities) in a computer group that have records stored for each HealthCheck type.
+   */
   @Override
   @SuppressWarnings("unchecked")
-  public Map<String, List<String>> getSystemsForSerialID(String serialID) {
-    return getTopics().stream()
+  public Map<String, List<String>> getSystemsForSerialID(String serialId) {
+    return getHealthCheckTypes().stream()
         .collect(Collectors.toMap(
             topic -> topic,
             topic -> healthCheckDB.getCollection(topic)
                 .aggregate(
                     Arrays.asList(
-                        Aggregates.match(Filters.eq(HealthCheckRecord.SERIAL_ID, serialID)),
+                        Aggregates.match(Filters.eq(HealthCheckRecord.SERIAL_ID, serialId)),
                         Aggregates.group(String.format("$%s", HealthCheckRecord.SERIAL_ID), Accumulators.addToSet(HealthCheckRecord.SYSTEM_UUID, String.format("$%s", HealthCheckRecord.SYSTEM_UUID)))
                     )
                 ).first()

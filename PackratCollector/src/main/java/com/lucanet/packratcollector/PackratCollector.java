@@ -19,6 +19,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Runner object for starting the PackratCollector.
+ * @see ApplicationRunner
+ * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
+ */
 @Configuration
 @EnableAutoConfiguration
 @ComponentScan({"com.lucanet.packratcollector", "com.lucanet.packratcommon"})
@@ -32,10 +37,24 @@ public class PackratCollector implements ApplicationRunner {
   }
 
   // ============================   Variables    ===========================79
+  /**
+   * The logger for the PackratCollector instance.
+   */
   private final Logger logger;
+  /**
+   * The list of {@link MessageConsumer} instances that will run during the PackratCollector's runtime.
+   */
   private final List<MessageConsumer> messageConsumerList;
 
   // ============================  Constructors  ===========================79
+  /**
+   * PackratCollector constructor.
+   * @param messageConsumerFactory The producer of the {@link MessageConsumer} that will run during the PackratCollector's runtime.
+   * @param jsonTopicsList List of topics that the JSON-based {@link MessageConsumer} instance will monitor for.
+   * @param jsonThreadPoolSize Size of thread pool for processing JSON-based HealthCheck messages.
+   * @param fileTopicsList List of topics that the file-based {@link MessageConsumer} instance will monitor for.
+   * @param fileThreadPoolSize Size of thread pool for processing file-based HealthCheck messages.
+   */
   public PackratCollector(
       MessageConsumerFactory messageConsumerFactory,
       @Value("#{'${packrat.consumers.json.topics}'.split(',')}") List<String> jsonTopicsList,
@@ -45,18 +64,26 @@ public class PackratCollector implements ApplicationRunner {
   ) {
     logger = LoggerFactory.getLogger(PackratCollector.class);
     messageConsumerList = Arrays.asList(
-        messageConsumerFactory.<Map<String, Object>>createMessageConsumer("JSONMessageConsumer", JSONDeserializer.class, jsonTopicsList, jsonThreadPoolSize),
-        messageConsumerFactory.<List<String>>createMessageConsumer("FileMessageConsumer", FileLinesDeserializer.class, fileTopicsList, fileThreadPoolSize)
+        messageConsumerFactory.createMessageConsumer("JSONMessageConsumer", JSONDeserializer.class, jsonTopicsList, jsonThreadPoolSize),
+        messageConsumerFactory.createMessageConsumer("FileMessageConsumer", FileLinesDeserializer.class, fileTopicsList, fileThreadPoolSize)
     );
   }
 
   // ============================ Public Methods ===========================79
+  /**
+   * Initiate the stored {@link MessageConsumer} instances.
+   * @param args Passed-in arguments from the application's start-up.
+   * @throws Exception Uncaught exceptions that occur during runtime.
+   */
   @Override
   public void run(ApplicationArguments args) throws Exception {
     logger.debug("Starting Packrat Collector Message Consumers...");
     messageConsumerList.forEach(MessageConsumer::run);
   }
 
+  /**
+   * Shut down the running {@link MessageConsumer} instances.
+   */
   @PreDestroy
   public void shutdown() {
     logger.debug("Stopping Packrat Collector Message Consumers...");

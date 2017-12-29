@@ -14,35 +14,60 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST controller for Serial Id-related requests.
+ * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
+ */
 @RestController
 @RequestMapping("/serialids")
 public class SerialIdsController {
   // =========================== Class Variables ===========================79
   // ============================ Class Methods ============================79
   // ============================   Variables    ===========================79
+  /**
+   * The logger for the SerialIdsController.
+   */
   private final Logger logger;
+  /**
+   * The database persistence object.
+   */
   private final DatabaseConnection databaseConnection;
 
   // ============================  Constructors  ===========================79
+  /**
+   * Controller constructor.
+   * @param databaseConnection The database persistence object.
+   */
   public SerialIdsController(DatabaseConnection databaseConnection) {
     this.logger = LoggerFactory.getLogger(SerialIdsController.class);
     this.databaseConnection = databaseConnection;
   }
 
   // ============================ Public Methods ===========================79
+  /**
+   * Get map of all computer groups that have records in each HealthCheck type.
+   * @param servletResponse Response object used to set the HTTP response code.
+   * @return The map of all computer groups present (in the form of a serial ID for each computer group).
+   */
   @LogExecution
   @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
   public Map<String, List<String>> getSerialIDS(HttpServletResponse servletResponse) {
     Map<String, List<String>> serialIDS = new HashMap<>();
     try {
-      serialIDS.putAll(databaseConnection.getSerialIDS());
+      serialIDS.putAll(databaseConnection.getSerialIds());
     } catch (Exception e) {
-      logger.error("Error occurred in getSerialIDS: {} ({})", e.getMessage(), e.getClass());
+      logger.error("Error occurred in getSerialIds: {} ({})", e.getMessage(), e.getClass());
       servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     return serialIDS;
   }
 
+  /**
+   * Get map of all computers that have records in each HealthCheck type for a specified computer group.
+   * @param servletResponse Response object used to set the HTTP response code.
+   * @param serialID The specified computer group (in the form of a serial ID).
+   * @return The map of all computers (in the form of UUID entities) in a computer group that have records stored for each HealthCheck type.
+   */
   @LogExecution
   @RequestMapping(value = "/{serialID}/systems")
   public Map<String, List<String>> getSystemsForSerialID(HttpServletResponse servletResponse, @PathVariable("serialID") String serialID) {
