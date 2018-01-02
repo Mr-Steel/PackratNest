@@ -67,6 +67,7 @@ class MongoDatabaseConnection implements DatabaseConnection {
   public MongoDatabaseConnection(
       @Value("${packrat.db.url}") String dbURL,
       @Value("${packrat.db.port}") int dbPort,
+      @Value("${packrat.db.dbname}") String dbName,
       @Value("${packrat.db.username}") String username,
       @Value("${packrat.db.password}") String password
   ) {
@@ -75,10 +76,10 @@ class MongoDatabaseConnection implements DatabaseConnection {
     MongoClientOptions.Builder clientOptionsBuilder = new MongoClientOptions.Builder();
     MongoClient mongoClient = new MongoClient(
         new ServerAddress(dbURL, dbPort),
-        MongoCredential.createCredential(username, "packrat_healthcheck", password.toCharArray()),
+        MongoCredential.createCredential(username, dbName, password.toCharArray()),
         clientOptionsBuilder.build()
     );
-    this.healthCheckDB = mongoClient.getDatabase("packrat_healthcheck");
+    this.healthCheckDB = mongoClient.getDatabase(dbName);
   }
 
   // ============================ Public Methods ===========================79

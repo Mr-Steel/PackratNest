@@ -11,6 +11,5 @@ repositories {
 
 dependencies {
     compile project(':PackratCommon')
-    compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.1.7'
     compile group: 'org.apache.kafka', name: 'kafka-clients', version: '1.0.0'
 }

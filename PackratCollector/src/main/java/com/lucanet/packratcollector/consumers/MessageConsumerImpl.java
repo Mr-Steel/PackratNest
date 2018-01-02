@@ -2,16 +2,15 @@ package com.lucanet.packratcollector.consumers;
 
 import com.lucanet.packratcollector.persister.RecordPersister;
 import com.lucanet.packratcommon.model.HealthCheckHeader;
-import io.reactivex.Observable;
-import io.reactivex.schedulers.Schedulers;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -136,9 +135,7 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
         logger.debug("{} polling Kafka Server...", consumerName);
         ConsumerRecords<HealthCheckHeader, T> records = kafkaConsumer.poll(1000L);
         logger.debug("Records polled for {}: {}", consumerName, records.count());
-        Observable.fromIterable(records)
-            .subscribeOn(Schedulers.from(threadPoolExecutor))
-            .subscribe(this::processMessage, this::processError);
+        threadPoolExecutor.submit(() -> processMessages(records));
       } catch (Exception e) {
         logger.error("Error polling messages in {}: {}", consumerName, e.getMessage());
       }
@@ -149,32 +146,46 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
   }
 
   /**
-   * Process a HealthCheck message that is obtained from the Kafka consumer.
-   * @param consumerRecord The received HealthCheck message.
+   * Process HealthCheck records that are received from the Kafka consumer
+   * @param consumerRecords The received HealthCheck records
    */
-  private void processMessage(ConsumerRecord<HealthCheckHeader, T> consumerRecord) {
-    try {
-      recordPersister.updateOffset(new TopicPartition(consumerRecord.topic(), consumerRecord.partition()), (consumerRecord.offset() + 1));
-    } catch (IllegalArgumentException iae) {
-      logger.error("{} unable to persist offset for topic '{}' partition {}: {}", consumerName, consumerRecord.topic(), consumerRecord.partition(), iae.getMessage());
-    }
-    if ((consumerRecord.key() != null) && (consumerRecord.value() != null)) {
-      logger.debug("Record received for '{}' in {}: {}", consumerRecord.topic(), consumerName, consumerRecord.value());
-      try {
-        recordPersister.persistRecord(consumerRecord);
-      } catch (IllegalArgumentException iae) {
-        logger.error("Unable to write '{}' record {}@{} in {}: topic does not exist in database", consumerRecord.topic(), consumerRecord.offset(), consumerRecord.timestamp(), consumerName);
-      }
-    } else {
-      logger.warn("Unable to process '{}' record {}@{} in {}: either key or value were null", consumerRecord.topic(), consumerRecord.offset(), consumerRecord.timestamp(), consumerName);
-    }
-  }
+  private void processMessages(ConsumerRecords<HealthCheckHeader, T> consumerRecords) {
+    //Create a lookup map to determine the highest offset number encountered for each
+    //topic/partition combo. This will minimize the amount of update queries sent to
+    //the database connection
+    Map<TopicPartition, Long> offsetsMap = new HashMap<>();
 
-  /**
-   * Process an error that is thrown when processing a received HealthCheck message.
-   * @param e The thrown error.
-   */
-  private void processError(Throwable e) {
-    logger.error("Error in processing record in {}: {}", consumerName, e.getMessage());
+    consumerRecords.forEach(consumerRecord -> {
+      //Check the offset for the current HealthCheck record against the lookup map
+      TopicPartition topicPartition = new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
+      Long recordOffset = consumerRecord.offset() + 1;
+      if ((!offsetsMap.containsKey(topicPartition)) || (offsetsMap.get(topicPartition).compareTo(recordOffset) < 0)) {
+        offsetsMap.put(topicPartition, recordOffset);
+      }
+
+      //Persist the record only if the header and the data were deserialized properly
+      if ((consumerRecord.key() != null) && (consumerRecord.value() != null)) {
+        logger.debug("Record received for '{}' in {}: {}", consumerRecord.topic(), consumerName, consumerRecord.value());
+        try {
+          recordPersister.persistRecord(consumerRecord);
+        } catch (IllegalArgumentException iae) {
+          logger.error("Unable to write '{}' record {}@{} in {}: topic does not exist in database", consumerRecord.topic(), consumerRecord.offset(), consumerRecord.timestamp(), consumerName);
+        } catch (Exception e) {
+          logger.error("Error in processing record in {}: {}", consumerName, e.getMessage());
+        }
+      } else {
+        logger.warn("Unable to process '{}' record {}@{} in {}: either key or value were null", consumerRecord.topic(), consumerRecord.offset(), consumerRecord.timestamp(), consumerName);
+      }
+    });
+
+    //Set offsets for each topic/partition combo to the highest-encountered offset number
+    offsetsMap.forEach((partition, offset) -> {
+      try {
+        logger.debug("Setting offset to {} for topic '{}' partition '{}'", offset, partition.topic(), partition.partition());
+        recordPersister.updateOffset(partition, offset);
+      } catch (IllegalArgumentException iae) {
+        logger.error("{} unable to persist offset for topic '{}' partition {}: {}", consumerName, partition.topic(), partition.partition(), iae.getMessage());
+      }
+    });
   }
 }
