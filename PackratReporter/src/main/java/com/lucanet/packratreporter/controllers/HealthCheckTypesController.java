@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PreDestroy;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,7 @@ public class HealthCheckTypesController {
       topicsList = databaseConnection.getHealthCheckTypes();
       servletResponse.setStatus(HttpServletResponse.SC_OK);
     } catch (Exception e) {
-      logger.error("Error occurred in getHealthCheckTypes: {}", e.getMessage());
+      logger.error("Error occurred in getHealthCheckTypes:", e);
       servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       topicsList = new ArrayList<>();
     }
@@ -78,7 +79,7 @@ public class HealthCheckTypesController {
       logger.warn("Illegal argument in SystemUUIDs query: {}", iae.getMessage());
       servletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
     } catch (Exception e) {
-      logger.error("Error occurred in getDistinctSystems: {} ({})", e.getMessage(), e.getClass());
+      logger.error("Error occurred in getDistinctSystems:", e);
       servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     return distinctSystemsList;
@@ -105,7 +106,7 @@ public class HealthCheckTypesController {
       logger.warn("Illegal argument in Session Timestamps query: {}", iae.getMessage());
       servletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
     } catch (Exception e) {
-      logger.error("Error occurred in getSessionTimestamps: {} ({})", e.getMessage(), e.getClass());
+      logger.error("Error occurred in getSessionTimestamps:", e);
       servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     return sessionTimestamps;
@@ -120,7 +121,7 @@ public class HealthCheckTypesController {
    * @return The list of all HealthCheck records for the computer that occurred in the specified session.
    */
   @LogExecution
-  @RequestMapping(value = "/{healthCheckType}/healthchecks", method = RequestMethod.GET, produces = "application/json")
+  @RequestMapping(value = "/{healthCheckType}/entries", method = RequestMethod.GET, produces = "application/json")
   public List<Map<String, Object>> getSessionHealthChecks(
       HttpServletResponse servletResponse,
       @PathVariable("healthCheckType") String healthCheckType,
@@ -134,10 +135,15 @@ public class HealthCheckTypesController {
       logger.warn("Illegal argument in Session HealthChecks query: {}", iae.getMessage());
       servletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
     } catch (Exception e) {
-      logger.error("Error occurred in getSessionHealthChecks: {} ({})", e.getMessage(), e.getClass());
+      logger.error("Error occurred in getSessionHealthChecks:", e);
       servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     return sessionHealthChecks;
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    databaseConnection.shutdown();
   }
 
   // ========================== Protected Methods ==========================79

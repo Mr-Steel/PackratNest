@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PreDestroy;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +57,7 @@ public class SerialIdsController {
     try {
       serialIDS.putAll(databaseConnection.getSerialIds());
     } catch (Exception e) {
-      logger.error("Error occurred in getSerialIds: {} ({})", e.getMessage(), e.getClass());
+      logger.error("Error occurred in getSerialIds:", e);
       servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     return serialIDS;
@@ -76,11 +77,15 @@ public class SerialIdsController {
     try {
       serialIDSystems.putAll(databaseConnection.getSystemsForSerialID(serialId));
     } catch (Exception e) {
-      e.printStackTrace();
-      logger.error("Error occurred in getSystemsForSerialId: {} ({})", e.getMessage(), e.getClass());
+      logger.error("Error occurred in getSystemsForSerialId:", e);
       servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
     return serialIDSystems;
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    databaseConnection.shutdown();
   }
 
   // ========================== Protected Methods ==========================79

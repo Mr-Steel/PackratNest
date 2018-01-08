@@ -27,6 +27,7 @@ public class CommonStepDefinitions {
       "TransactionStats"
   );
 
+  private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
   private ObjectMapper objectMapper = new ObjectMapper();
   private TypeReference<HashMap<String, ArrayList<HashMap<String, Object>>>> typeReference = new TypeReference<HashMap<String, ArrayList<HashMap<String, Object>>>>(){};
@@ -34,15 +35,19 @@ public class CommonStepDefinitions {
   @After
   public void teardown() {
     if (mongoDatabase != null) {
-      //clearDatabase(mongoDatabase);
-      //mongoDatabase = null;
+      clearDatabase(mongoDatabase);
+      mongoDatabase = null;
+    }
+    if (mongoClient != null) {
+      mongoClient.close();
+      mongoClient = null;
     }
   }
 
   @Given("^a running database instance \"([^\"]*)\"$")
   public void a_running_database_instance(String dbName) throws Throwable {
     MongoClientOptions.Builder clientOptionsBuilder = new MongoClientOptions.Builder();
-    MongoClient mongoClient = new MongoClient(
+    mongoClient = new MongoClient(
         new ServerAddress("localhost", 27017),
         MongoCredential.createCredential("packratUser", dbName, "packratPassword".toCharArray()),
         clientOptionsBuilder.build()

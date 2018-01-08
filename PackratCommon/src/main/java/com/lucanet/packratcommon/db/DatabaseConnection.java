@@ -77,6 +77,9 @@ public interface DatabaseConnection {
    * @return The map of all computers (in the form of UUID entities) in a computer group that have records stored for each HealthCheck type.
    */
   Map<String, List<String>> getSystemsForSerialID(String serialId);
-
+  /**
+   * Shut down the database connection
+   */
+  void shutdown();
   // =========================== Default Methods ===========================79
 }

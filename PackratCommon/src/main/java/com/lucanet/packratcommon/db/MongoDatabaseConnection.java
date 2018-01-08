@@ -49,7 +49,11 @@ class MongoDatabaseConnection implements DatabaseConnection {
    */
   private final Logger logger;
   /**
-   * The MongoDB representation.
+   * The MongoDB client connection representation.
+   */
+  private final MongoClient mongoClient;
+  /**
+   * The MongoDB database representation.
    */
   private final MongoDatabase healthCheckDB;
 
@@ -71,7 +75,7 @@ class MongoDatabaseConnection implements DatabaseConnection {
     logger = LoggerFactory.getLogger(MongoDatabaseConnection.class);
     logger.info("Building CouchDB connection to {}:{}@{}:{}", username, password, dbURL, dbPort);
     MongoClientOptions.Builder clientOptionsBuilder = new MongoClientOptions.Builder();
-    MongoClient mongoClient = new MongoClient(
+    mongoClient = new MongoClient(
         new ServerAddress(dbURL, dbPort),
         MongoCredential.createCredential(username, dbName, password.toCharArray()),
         clientOptionsBuilder.build()
@@ -203,20 +207,27 @@ class MongoDatabaseConnection implements DatabaseConnection {
   @SuppressWarnings("unchecked")
   public List<Long> getSessionTimestamps(String healthCheckType, String systemUUID) throws IllegalArgumentException {
     if (getHealthCheckTypes().contains(healthCheckType)) {
-      AggregateIterable<Document> iterable = healthCheckDB.getCollection(healthCheckType)
-          .aggregate(
-              Arrays.asList(
-                  Aggregates.match(Filters.eq(HealthCheckRecord.SYSTEM_UUID, systemUUID)),
-                  Aggregates.group(
-                      String.format("$%s", HealthCheckRecord.SYSTEM_UUID),
-                      Accumulators.addToSet(
-                          HealthCheckRecord.SESSION_TIMESTAMP,
-                          String.format("$%s", HealthCheckRecord.SESSION_TIMESTAMP)
+      //Aggregate timestamp data from database
+      List<Number> timestampsList = Optional.ofNullable(
+          healthCheckDB.getCollection(healthCheckType)
+              .aggregate(
+                  Arrays.asList(
+                      Aggregates.match(Filters.eq(HealthCheckRecord.SYSTEM_UUID, systemUUID)),
+                      Aggregates.group(
+                          String.format("$%s", HealthCheckRecord.SYSTEM_UUID),
+                          Accumulators.addToSet(
+                              HealthCheckRecord.SESSION_TIMESTAMP,
+                              String.format("$%s", HealthCheckRecord.SESSION_TIMESTAMP)
+                          )
                       )
                   )
-              )
-          );
-      return iterable.first().get(HealthCheckRecord.SESSION_TIMESTAMP, List.class);
+              ).first()
+      ).map(doc ->
+          doc.get(HealthCheckRecord.SESSION_TIMESTAMP, List.class)
+      ).orElse(new ArrayList());
+      //Force conversion of timestamp values to Long, as they may come out of the
+      //database as an Integer type
+      return timestampsList.stream().map(Number::longValue).collect(Collectors.toList());
     } else {
       throw new IllegalArgumentException(String.format("Topic '%s' doesn't exist", healthCheckType));
     }
@@ -285,6 +296,14 @@ class MongoDatabaseConnection implements DatabaseConnection {
               return queryResults.map(doc -> doc.get(HealthCheckRecord.SYSTEM_UUID, List.class)).orElse(new ArrayList());
             }
         ));
+  }
+
+  /**
+   * Shut down the MongoDB client connection
+   */
+  @Override
+  public void shutdown() {
+    mongoClient.close();
   }
 
   // ========================== Protected Methods ==========================79
