@@ -15,10 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -273,14 +270,20 @@ class MongoDatabaseConnection implements DatabaseConnection {
     return getHealthCheckTypes().stream()
         .collect(Collectors.toMap(
             topic -> topic,
-            topic -> healthCheckDB.getCollection(topic)
-                .aggregate(
-                    Arrays.asList(
-                        Aggregates.match(Filters.eq(HealthCheckRecord.SERIAL_ID, serialId)),
-                        Aggregates.group(String.format("$%s", HealthCheckRecord.SERIAL_ID), Accumulators.addToSet(HealthCheckRecord.SYSTEM_UUID, String.format("$%s", HealthCheckRecord.SYSTEM_UUID)))
-                    )
-                ).first()
-                .get(HealthCheckRecord.SYSTEM_UUID, List.class)
+            topic -> {
+              Optional<Document> queryResults = Optional.ofNullable(
+                  healthCheckDB.getCollection(topic)
+                      .aggregate(
+                          Arrays.asList(
+                              Aggregates.match(Filters.eq(HealthCheckRecord.SERIAL_ID, serialId)),
+                              Aggregates.group(
+                                  String.format("$%s", HealthCheckRecord.SERIAL_ID),
+                                  Accumulators.addToSet(HealthCheckRecord.SYSTEM_UUID, String.format("$%s", HealthCheckRecord.SYSTEM_UUID))
+                              )
+                          )
+                      ).first());
+              return queryResults.map(doc -> doc.get(HealthCheckRecord.SYSTEM_UUID, List.class)).orElse(new ArrayList());
+            }
         ));
   }
 

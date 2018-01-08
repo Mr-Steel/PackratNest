@@ -135,7 +135,9 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
         logger.debug("{} polling Kafka Server...", consumerName);
         ConsumerRecords<HealthCheckHeader, T> records = kafkaConsumer.poll(1000L);
         logger.debug("Records polled for {}: {}", consumerName, records.count());
-        threadPoolExecutor.submit(() -> processMessages(records));
+        if (!records.isEmpty()) {
+          threadPoolExecutor.submit(() -> processMessages(records));
+        }
       } catch (Exception e) {
         logger.error("Error polling messages in {}: {}", consumerName, e.getMessage());
       }
