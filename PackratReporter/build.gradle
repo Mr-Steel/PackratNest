@@ -9,6 +9,10 @@ repositories {
     mavenCentral()
 }
 
+ext.swaggerVersion='2.7.0'
+
 dependencies {
     compile project(':PackratCommon')
+    compile group: 'io.springfox', name: 'springfox-swagger2', version: swaggerVersion
+    compile group: 'io.springfox', name: 'springfox-swagger-ui', version: swaggerVersion
 }

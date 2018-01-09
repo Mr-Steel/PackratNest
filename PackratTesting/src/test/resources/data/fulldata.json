@@ -118,5 +118,27 @@
       "healthCheckTimestamp": 1111111111,
       "data": { "true": true }
     }
+  ],
+  "_offsets": [
+    {
+      "topic": "DynamicSystemStats",
+      "partition": 0,
+      "offset": 5
+    },
+    {
+      "topic": "StaticSystemStats",
+      "partition": 0,
+      "offset": 5
+    },
+    {
+      "topic": "SummaDatabase",
+      "partition": 0,
+      "offset": 3
+    },
+    {
+      "topic": "TransactionStats",
+      "partition": 0,
+      "offset": 1
+    }
   ]
 }

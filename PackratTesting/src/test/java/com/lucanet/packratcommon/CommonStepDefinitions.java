@@ -11,12 +11,16 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import cucumber.api.java.After;
 import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CommonStepDefinitions {
 
@@ -68,6 +72,28 @@ public class CommonStepDefinitions {
         collection.insertOne(new Document(collectionEntry))
       );
     });
+  }
+
+  @Then("^the \"([^\"]*)\" collection of the database will have the following entries:$")
+  public void the_collection_of_the_database_will_have_the_following_entries(String collectionName, List<Map<String, Object>> expectedEntriesList) throws Throwable {
+    // Write code here that turns the phrase above into concrete actions
+    // For automatic transformation, change DataTable to one of
+    // List<YourType>, List<List<E>>, List<Map<K,V>> or Map<K,V>.
+    // E,K,V must be a scalar (String, Integer, Date, enum etc)
+    MongoCollection collection = mongoDatabase.getCollection(collectionName);
+    Assert.assertNotNull(String.format("Database collection '%s' not found.", collectionName), collection);
+    for (Map<String, Object> expectedRow : expectedEntriesList) {
+      Bson[] givenFilters = expectedRow.entrySet().stream()
+          .map(entry -> Filters.eq(entry.getKey(), entry.getValue()))
+          .collect(Collectors.toList())
+          .toArray(new Bson[0]);
+      Collection resultsList = collection.find(
+          Filters.and(
+              givenFilters
+          )
+      ).into(new ArrayList());
+      Assert.assertThat(String.format("Should only find one record for '%s'", expectedRow), resultsList.size(), Matchers.is(1));
+    }
   }
 
   private void clearDatabase(MongoDatabase database) {

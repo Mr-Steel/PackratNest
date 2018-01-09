@@ -79,11 +79,11 @@ Feature: HealthCheck Search
       And the response should match the file content of "<contentFile>"
 
     Examples:
-      | healthCheckType    | systemUUID      | sessionTimestamp | contentFile                  |
-      | DynamicSystemStats | System-AAAA1111 | 1111111111       | systemaaaa1111_dynamic11.txt |
-      | DynamicSystemStats | System-AAAA2222 | 1111111112       | systemaaaa2222_dynamic12.txt |
-      | SummaDatabase      | System-DDDD1111 | 1111111111       | systemdddd1111_dynamic11.txt |
-      | StaticSystemStats  | System-EEEE1111 | 1111111111       | systemeeee1111_dynamic11.txt |
+      | healthCheckType    | systemUUID      | sessionTimestamp | contentFile                   |
+      | DynamicSystemStats | System-AAAA1111 | 1111111111       | systemaaaa1111_dynamic11.json |
+      | DynamicSystemStats | System-AAAA2222 | 1111111112       | systemaaaa2222_dynamic12.json |
+      | SummaDatabase      | System-DDDD1111 | 1111111111       | systemdddd1111_dynamic11.json |
+      | StaticSystemStats  | System-EEEE1111 | 1111111111       | systemeeee1111_dynamic11.json |
 
   @Negative
   Scenario: HealthCheck entries request with an improper HealthCheck type

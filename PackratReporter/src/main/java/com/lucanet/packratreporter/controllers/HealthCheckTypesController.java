@@ -2,8 +2,10 @@ package com.lucanet.packratreporter.controllers;
 
 import com.lucanet.packratcommon.aspects.LogExecution;
 import com.lucanet.packratcommon.db.DatabaseConnection;
+import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PreDestroy;
@@ -47,6 +49,13 @@ public class HealthCheckTypesController {
    * @param servletResponse Response object used to set the HTTP response code.
    * @return List of HealthCheck types.
    */
+  @ApiOperation(
+      value = "Get all HealthCheck types",
+      responseContainer = "List"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(code = HttpServletResponse.SC_OK, message = "HealthCheck types obtained")
+  })
   @LogExecution
   @RequestMapping(value = "/types", method = RequestMethod.GET, produces = "application/json")
   public List<String> getHealthCheckTypes(HttpServletResponse servletResponse) {
@@ -68,9 +77,24 @@ public class HealthCheckTypesController {
    * @param healthCheckType The specified HealthCheck type.
    * @return The list of relevant computers (in the form of UUID entities).
    */
+  @ApiOperation(
+      value = "Get system UUIDs that have entries for a HealthCheck type",
+      responseContainer = "List"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(code = HttpServletResponse.SC_OK, message = "List of SystemUUIDs obtained for the supplied HealthCheck type"),
+      @ApiResponse(code = HttpServletResponse.SC_BAD_REQUEST, message = "The supplied HealthCheck type does not exist")
+  })
   @LogExecution
-  @RequestMapping(value = "/{healthCheckType}/systemuuids", method = RequestMethod.GET, produces = "application/json")
-  public List<String> getDistinctSystems(HttpServletResponse servletResponse, @PathVariable("healthCheckType") String healthCheckType) {
+  @RequestMapping(value = "/{healthCheckType}/systemuuids", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+  public List<String> getDistinctSystems(
+      HttpServletResponse servletResponse,
+      @ApiParam(
+          value = "HealthCheck Type",
+          required = true
+      )
+      @PathVariable("healthCheckType") String healthCheckType
+  ) {
     List<String> distinctSystemsList = new ArrayList<>();
     try {
       distinctSystemsList.addAll(databaseConnection.getSystemsInHealthCheckType(healthCheckType));
@@ -92,11 +116,27 @@ public class HealthCheckTypesController {
    * @param systemUUID The specified computer (in the form of a UUID entity).
    * @return The list of sessions (in the form of timestamps representing seconds elapsed since the UNIX epoch).
    */
+  @ApiOperation(
+      value = "Get session timestamps of a system UUID that has HealthCheck entries",
+      responseContainer = "List"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(code = HttpServletResponse.SC_OK, message = "List of session timestamps obtained for the supplied HealthCheck type and system UUID"),
+      @ApiResponse(code = HttpServletResponse.SC_BAD_REQUEST, message = "The supplied HealthCheck type does not exist")
+  })
   @LogExecution
-  @RequestMapping(value = "/{healthCheckType}/sessions", method = RequestMethod.GET, produces = "application/json")
+  @RequestMapping(value = "/{healthCheckType}/sessions", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
   public List<Long> getSessionTimestamps(
       HttpServletResponse servletResponse,
+      @ApiParam(
+          value = "HealthCheck Type",
+          required = true
+      )
       @PathVariable("healthCheckType") String healthCheckType,
+      @ApiParam(
+          value = "System UUID",
+          required = true
+      )
       @RequestParam("systemUUID") String systemUUID
   ) {
     List<Long> sessionTimestamps = new ArrayList<>();
@@ -120,12 +160,33 @@ public class HealthCheckTypesController {
    * @param sessionTimestamp The specified session (in the form of a timestamp representing seconds elapsed since the UNIX epoch).
    * @return The list of all HealthCheck records for the computer that occurred in the specified session.
    */
+  @ApiOperation(
+      value = "Get HealthCheck entries of a session for a system UUID",
+      responseContainer = "List"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(code = HttpServletResponse.SC_OK, message = "List of HealthChecks obtained for the supplied HealthCheck type, " +
+          "system UUID, and session timestamp"),
+      @ApiResponse(code = HttpServletResponse.SC_BAD_REQUEST, message = "The supplied HealthCheck type does not exist")
+  })
   @LogExecution
-  @RequestMapping(value = "/{healthCheckType}/entries", method = RequestMethod.GET, produces = "application/json")
+  @RequestMapping(value = "/{healthCheckType}/entries", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
   public List<Map<String, Object>> getSessionHealthChecks(
       HttpServletResponse servletResponse,
+      @ApiParam(
+          value = "HealthCheck Type",
+          required = true
+      )
       @PathVariable("healthCheckType") String healthCheckType,
+      @ApiParam(
+          value = "System UUID",
+          required = true
+      )
       @RequestParam("systemUUID") String systemUUID,
+      @ApiParam(
+          value = "Session Timestamp",
+          required = true
+      )
       @RequestParam("sessionTimestamp") Long sessionTimestamp
   ) {
     List<Map<String, Object>> sessionHealthChecks = new ArrayList<>();

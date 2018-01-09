@@ -10,6 +10,17 @@ import org.junit.runner.RunWith;
     glue = {
         "com.lucanet.packratcommon",
         "com.lucanet.packratcollector"
+    },
+    junit = {
+        "--filename-compatible-names"
+    },
+    plugin = {
+        "pretty",
+        "json:build/reports/packrat_collector.json",
+        "junit:build/reports/packrat_collector.xml"
+    },
+    tags = {
+        "~@Ignore"
     }
 )
 public class PackratCollectorTest {

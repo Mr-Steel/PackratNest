@@ -2,8 +2,10 @@ package com.lucanet.packratreporter.controllers;
 
 import com.lucanet.packratcommon.aspects.LogExecution;
 import com.lucanet.packratcommon.db.DatabaseConnection;
+import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -50,8 +52,15 @@ public class SerialIdsController {
    * @param servletResponse Response object used to set the HTTP response code.
    * @return The map of all computer groups present (in the form of a serial ID for each computer group).
    */
+  @ApiOperation(
+      value = "Get serial ids that have HealthCheck entries",
+      responseContainer = "Map"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(code = HttpServletResponse.SC_OK, message = "Serial ids obtained for each HealthCheck type")
+  })
   @LogExecution
-  @RequestMapping(value = "", method = RequestMethod.GET, produces = "application/json")
+  @RequestMapping(value = "", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
   public Map<String, List<String>> getSerialIDS(HttpServletResponse servletResponse) {
     Map<String, List<String>> serialIDS = new HashMap<>();
     try {
@@ -69,9 +78,23 @@ public class SerialIdsController {
    * @param serialId The specified computer group (in the form of a serial ID).
    * @return The map of all computers (in the form of UUID entities) in a computer group that have records stored for each HealthCheck type.
    */
+  @ApiOperation(
+      value = "Get system UUIDs for a specified system id that have HealthCheck entries",
+      responseContainer = "Map"
+  )
+  @ApiResponses(value = {
+      @ApiResponse(code = HttpServletResponse.SC_OK, message = "System UUIDs obtained for each HealthCheck type based on the supplied serial id")
+  })
   @LogExecution
-  @RequestMapping(value = "/{serialId}/systems")
-  public Map<String, List<String>> getSystemsForSerialId(HttpServletResponse servletResponse, @PathVariable("serialId") String serialId) {
+  @RequestMapping(value = "/{serialId}/systems", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+  public Map<String, List<String>> getSystemsForSerialId(
+      HttpServletResponse servletResponse,
+      @ApiParam(
+          value = "Serial id",
+          required = true
+      )
+      @PathVariable("serialId") String serialId
+  ) {
     Map<String, List<String>> serialIDSystems = new HashMap<>();
     logger.debug("Getting systems for serial id '{}'", serialId);
     try {

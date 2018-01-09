@@ -10,6 +10,7 @@ repositories {
 }
 
 ext.cucumberVersion = '1.2.5'
+ext.curatorVersion = '4.0.0'
 
 dependencies {
     compile project(':PackratCollector')
@@ -19,4 +20,5 @@ dependencies {
     testCompile group: 'info.cukes', name: 'cucumber-java', version: cucumberVersion
     testCompile group: 'info.cukes', name: 'cucumber-junit', version: cucumberVersion
     testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.5.9.RELEASE'
+    testCompile group: 'org.springframework.kafka', name: 'spring-kafka-test', version: '2.1.0.RELEASE'
 }
