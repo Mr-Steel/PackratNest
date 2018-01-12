@@ -8,26 +8,27 @@ import com.lucanet.util.JSONObjectSerializer;
 import cucumber.api.java.After;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.When;
-import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.*;
 import java.util.function.Function;
 
-//*
+
 @SpringBootTest(
     classes = PackratCollector.class
 )
 @ContextConfiguration
+@DirtiesContext
 @TestPropertySource(locations = "classpath:packrat_collector_test.properties")
-//*/
 public class CollectorStepDefinitions {
 
   private static final List<String> JSON_DATA_TOPICS = Arrays.asList(
@@ -50,6 +51,17 @@ public class CollectorStepDefinitions {
     jsonMessagesMap.clear();
     fileMessagesTemplate = null;
     fileMessagesMap.clear();
+    //Kludge to purge the Kafka message topics. Basically, destroy the existing KafkaEmbedded
+    //instance and create a new one in its place
+    PackratCollectorTest.kafkaEmbedded.destroy();
+    PackratCollectorTest.kafkaEmbedded = new KafkaEmbedded(
+        1,
+        true,
+        1,
+        "DynamicSystemStats", "StaticSystemStats", "SummaDatabase", "TransactionStats"
+    );
+    PackratCollectorTest.kafkaEmbedded.before();
+    Thread.sleep(1000L);
   }
 
   @Given("^a connection to the Kafka broker$")

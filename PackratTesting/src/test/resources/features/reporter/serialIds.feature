@@ -5,7 +5,6 @@ Feature: Serial Ids Search
     Given a running database instance "packrat_healthcheck_test"
       And the database instance is populated with HealthCheck data from "fulldata.json"
 
-  @Ignore
   @Positive
   Scenario: List Serial Ids
     When the user sends the following request:
@@ -16,7 +15,6 @@ Feature: Serial Ids Search
         | DynamicSystemStats            | StaticSystemStats                           | SummaDatabase                 | TransactionStats |
         | ["Serial-AAAA","Serial-BBBB"] | ["Serial-AAAA","Serial-BBBB","Serial-CCCC"] | ["Serial-BBBB","Serial-DDDD"] | ["Serial-CCCC"]  |
 
-  @Ignore
   @Positive
   Scenario Outline: List Systems For Serial Id
     When the user sends the following request:

@@ -27,5 +27,18 @@
     }
   ],
   "TransactionStats": [
+    {
+      "serialId": "",
+      "systemUUID": "",
+      "sessionTimestamp": 1111111111,
+      "healthCheckTimestamp": 1111111111,
+      "data": [
+		"Line One",
+		"Line Two",
+		"Line Three",
+		"Line Four",
+		"Line Five"
+	  ]
+    }
   ]
 }

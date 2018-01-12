@@ -2,6 +2,7 @@ package com.lucanet.packratcommon;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lucanet.packratcommon.db.MongoDatabaseConnection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
@@ -22,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class CommonStepDefinitions {
 
@@ -87,6 +87,23 @@ public class CommonStepDefinitions {
         collection.insertOne(new Document(collectionEntry))
       );
     });
+    MongoCollection offsetsCollection = mongoDatabase.getCollection(MongoDatabaseConnection.OFFSETS_COLLECTION_NAME);
+    healthCheckData.get(MongoDatabaseConnection.OFFSETS_COLLECTION_NAME).forEach(collectionEntry -> {
+      Document offsetDoc = new Document();
+      offsetDoc.put(
+          MongoDatabaseConnection.OFFSETS_TOPIC_KEY,
+          collectionEntry.get(MongoDatabaseConnection.OFFSETS_TOPIC_KEY)
+      );
+      offsetDoc.put(
+          MongoDatabaseConnection.OFFSETS_PARTITION_KEY,
+          Integer.valueOf(collectionEntry.get(MongoDatabaseConnection.OFFSETS_PARTITION_KEY).toString())
+      );
+      offsetDoc.put(
+          MongoDatabaseConnection.OFFSETS_OFFSET_KEY,
+          Long.valueOf(collectionEntry.get(MongoDatabaseConnection.OFFSETS_OFFSET_KEY).toString())
+      );
+      offsetsCollection.insertOne(offsetDoc);
+    });
   }
 
   @SuppressWarnings("unchecked")
@@ -123,13 +140,12 @@ public class CommonStepDefinitions {
   }
 
   private void clearDatabase(MongoDatabase database) {
-    MongoCollection offsetsCollection = database.getCollection("_offsets");
-    COLLECTIONS_LIST.forEach(collectionName -> {
-      database.getCollection(collectionName).deleteMany(new Document());
-      offsetsCollection.findOneAndUpdate(
-          Filters.eq("topic", collectionName),
-          new Document("$set", new Document("offset", 0))
-      );
-    });
+    database.getCollection(MongoDatabaseConnection.OFFSETS_COLLECTION_NAME)
+        .deleteMany(new Document());
+    COLLECTIONS_LIST.forEach(collectionName ->
+      database.getCollection(collectionName).deleteMany(new Document())
+    );
+    long offsetEntriesCount = database.getCollection(MongoDatabaseConnection.OFFSETS_COLLECTION_NAME)
+        .count();
   }
 }

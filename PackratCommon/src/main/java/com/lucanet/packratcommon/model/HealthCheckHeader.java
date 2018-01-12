@@ -1,5 +1,9 @@
 package com.lucanet.packratcommon.model;
 
+import org.hibernate.validator.constraints.NotEmpty;
+
+import javax.validation.constraints.NotNull;
+
 /**
  * DTO Class representing the metadata related to a {@link HealthCheckRecord}.
  * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
@@ -13,24 +17,30 @@ public class HealthCheckHeader {
    * <p>
    * This is represented by a serial ID.
    */
+  @NotNull
+  @NotEmpty
   private String serialId;
   /**
    * The computer that produced the HealthCheck record.
    * <p>
    * This is represented by a UUID.
    */
+  @NotNull
+  @NotEmpty
   private String systemUUID;
   /**
    * The session during which the HealthCheck record was produced.
    * <p>
    * This is represented by a timestamp of seconds elapsed since the UNIX epoch.
    */
+  @NotNull
   private Long sessionTimestamp;
   /**
    * The specific time when the HealthCheck record was produced.
    * <p>
    * This is represented by a timestamp of seconds elapsed since the UNIX epoch.
    */
+  @NotNull
   private Long healthCheckTimestamp;
 
   // ============================  Constructors  ===========================79

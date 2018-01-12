@@ -6,8 +6,14 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link Deserializer} for processing HealthCheck message header data.
@@ -26,6 +32,10 @@ public class HealthCheckHeaderDeserializer implements Deserializer<HealthCheckHe
    * Mapper that will translate raw byte data to a {@link HealthCheckHeader}.
    */
   private final ObjectMapper objectMapper;
+  /**
+   * Validator for ensuring properly-formatted HealthCheckHeader instances
+   */
+  private final Validator validator;
 
   // ============================  Constructors  ===========================79
   /**
@@ -34,6 +44,8 @@ public class HealthCheckHeaderDeserializer implements Deserializer<HealthCheckHe
   public HealthCheckHeaderDeserializer() {
     logger = LoggerFactory.getLogger(HealthCheckHeaderDeserializer.class);
     objectMapper = new ObjectMapper();
+    ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    this.validator = validatorFactory.getValidator();
   }
 
   // ============================ Public Methods ===========================79
@@ -56,7 +68,17 @@ public class HealthCheckHeaderDeserializer implements Deserializer<HealthCheckHe
   @Override
   public HealthCheckHeader deserialize(String topic, byte[] data) {
     try {
-      return objectMapper.readValue(data, HealthCheckHeader.class);
+      HealthCheckHeader healthCheckHeader = objectMapper.readValue(data, HealthCheckHeader.class);
+      Set<ConstraintViolation<HealthCheckHeader>> violations = validator.validate(healthCheckHeader);
+      if (violations.isEmpty()) {
+        return healthCheckHeader;
+      } else {
+        String violationsStr = violations.stream()
+            .map(violation -> String.format("%s: %s", violation.getPropertyPath(), violation.getMessage()))
+            .collect(Collectors.joining("; "));
+        logger.error("Constraint violations for deserializing HealthCheckHeader: {}", violationsStr);
+        return null;
+      }
     } catch (IOException ioe) {
       logger.error("Error deserializing HealthCheckHeader: {}", ioe.getMessage());
       return null;

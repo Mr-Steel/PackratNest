@@ -22,24 +22,24 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
  */
 @Service
-class MongoDatabaseConnection implements DatabaseConnection {
+public class MongoDatabaseConnection implements DatabaseConnection {
   // =========================== Class Variables ===========================79
   /**
    * Name of the Offsets collection ("_offsets") in the MongoDB database
    */
-  private static final String OFFSETS_COLLECTION_NAME = "_offsets";
+  public static final String OFFSETS_COLLECTION_NAME = "_offsets";
   /**
    * "topic" field key for usage in the Offsets collection of the MongoDB database
    */
-  private static final String OFFSETS_TOPIC_KEY = "topic";
+  public static final String OFFSETS_TOPIC_KEY = "topic";
   /**
    * "partition" field key for usage in the Offsets collection of the MongoDB database
    */
-  private static final String OFFSETS_PARTITION_KEY = "partition";
+  public static final String OFFSETS_PARTITION_KEY = "partition";
   /**
    * "offset" field key for usage in the Offsets collection of the MongoDB database
    */
-  private static final String OFFSETS_OFFSET_KEY = "offset";
+  public static final String OFFSETS_OFFSET_KEY = "offset";
 
   // ============================ Class Methods ============================79
   // ============================   Variables    ===========================79
@@ -72,7 +72,7 @@ class MongoDatabaseConnection implements DatabaseConnection {
       @Value("${packrat.db.password}") String password
   ) {
     logger = LoggerFactory.getLogger(MongoDatabaseConnection.class);
-    logger.info("Building CouchDB connection to {}:{}@{}:{}", username, password, dbURL, dbPort);
+    logger.info("Building MongoDB connection to {}@{}:{}", username, dbURL, dbPort);
     MongoClientOptions.Builder clientOptionsBuilder = new MongoClientOptions.Builder();
     mongoClient = new MongoClient(
         new ServerAddress(dbURL, dbPort),
