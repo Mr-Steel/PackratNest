@@ -4,6 +4,7 @@ Feature: HealthCheck Search
   Background:
     Given a running database instance "packrat_healthcheck_test"
 
+  @Ignore
   @Positive
   Scenario: List HealthCheck types
     When the user sends the following request:
@@ -14,6 +15,7 @@ Feature: HealthCheck Search
       And the response should have the following list:
         | DynamicSystemStats, StaticSystemStats, SummaDatabase, TransactionStats |
 
+  @Ignore
   @Positive
   Scenario Outline: List System UUIDs for a HealthCheck type
     Given the database instance is populated with HealthCheck data from "fulldata.json"
@@ -32,6 +34,7 @@ Feature: HealthCheck Search
       | SummaDatabase      | System-BBBB1111, System-DDDD1111                                   |
       | TransactionStats   | System-CCCC1111                                                    |
 
+  @Ignore
   @Negative
   Scenario: System UUIDs request with an improper HealthCheck type
     Given the database instance is populated with HealthCheck data from "fulldata.json"
@@ -41,6 +44,7 @@ Feature: HealthCheck Search
 
     Then the response should have an HTTP code of 400
 
+  @Ignore
   @Positive
   Scenario Outline: List session timestamps for a SystemUUID in a HealthCheck type
     Given the database instance is populated with HealthCheck data from "fulldata.json"
@@ -59,6 +63,7 @@ Feature: HealthCheck Search
       | SummaDatabase      | System-DDDD1111 | 1111111111             |
       | TransactionStats   | System-EEEE1111 |                        |
 
+  @Ignore
   @Negative
   Scenario: Session timestamps request with an improper HealthCheck type
     Given the database instance is populated with HealthCheck data from "fulldata.json"
@@ -68,6 +73,7 @@ Feature: HealthCheck Search
 
     Then the response should have an HTTP code of 400
 
+  @Ignore
   @Positive
   Scenario Outline: List HealthCheck entries for a SystemUUID in a HealthCheck type for a session
     Given the database instance is populated with HealthCheck data from "fulldata.json"
@@ -85,6 +91,7 @@ Feature: HealthCheck Search
       | SummaDatabase      | System-DDDD1111 | 1111111111       | systemdddd1111_dynamic11.json |
       | StaticSystemStats  | System-EEEE1111 | 1111111111       | systemeeee1111_dynamic11.json |
 
+  @Ignore
   @Negative
   Scenario: HealthCheck entries request with an improper HealthCheck type
     Given the database instance is populated with HealthCheck data from "fulldata.json"

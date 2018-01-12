@@ -1,3 +1,31 @@
-[
-
-]
+{
+  "DynamicSystemStats": [
+    {
+      "serialId": "Serial-AAAA",
+      "systemUUID": "System-AAAA1111",
+      "sessionTimestamp": 1111111111,
+      "healthCheckTimestamp": 1111111111,
+      "data": null
+    }
+  ],
+  "StaticSystemStats": [
+    {
+      "serialId": "Serial-AAAA",
+      "systemUUID": "System-AAAA2222",
+      "sessionTimestamp": null,
+      "healthCheckTimestamp": null,
+      "data": { "true": true }
+    }
+  ],
+  "SummaDatabase": [
+    {
+      "serialId": null,
+      "systemUUID": null,
+      "sessionTimestamp": 1111111123,
+      "healthCheckTimestamp": 1111111123,
+      "data": { "true": true }
+    }
+  ],
+  "TransactionStats": [
+  ]
+}

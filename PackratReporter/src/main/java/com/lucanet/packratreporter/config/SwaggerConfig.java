@@ -1,6 +1,7 @@
 package com.lucanet.packratreporter.config;
 
 import com.google.common.base.Predicates;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -16,6 +17,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 @EnableSwagger2
@@ -31,7 +33,7 @@ public class SwaggerConfig {
         .apiInfo(getApiInfo())
         .useDefaultResponseMessages(false)
         .globalResponseMessage(RequestMethod.GET,
-            Arrays.asList(
+            Collections.singletonList(
                 new ResponseMessageBuilder()
                     .code(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
                     .message("An internal error occurred")

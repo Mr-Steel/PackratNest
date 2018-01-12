@@ -12,6 +12,7 @@ import com.mongodb.client.model.Filters;
 import cucumber.api.java.After;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.hamcrest.Matchers;
@@ -20,6 +21,7 @@ import org.junit.Assert;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class CommonStepDefinitions {
@@ -31,6 +33,14 @@ public class CommonStepDefinitions {
       "TransactionStats"
   );
 
+  private static final Map<String, Function> TYPE_TRANSFORMER_MAP;
+  static {
+    TYPE_TRANSFORMER_MAP = new HashMap<>();
+    TYPE_TRANSFORMER_MAP.put("STRING", obj -> obj);
+    TYPE_TRANSFORMER_MAP.put("INTEGER", obj -> Integer.valueOf(obj.toString()));
+    TYPE_TRANSFORMER_MAP.put("LONG", obj -> Long.valueOf(obj.toString()));
+  }
+
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
   private ObjectMapper objectMapper = new ObjectMapper();
@@ -39,13 +49,18 @@ public class CommonStepDefinitions {
   @After
   public void teardown() {
     if (mongoDatabase != null) {
-      clearDatabase(mongoDatabase);
+      //clearDatabase(mongoDatabase);
       mongoDatabase = null;
     }
     if (mongoClient != null) {
       mongoClient.close();
       mongoClient = null;
     }
+  }
+
+  @When("^I wait (\\d+) seconds$")
+  public void i_wait_seconds(int sleepSecondsCount) throws Throwable {
+    Thread.sleep((long) sleepSecondsCount * 1000L);
   }
 
   @Given("^a running database instance \"([^\"]*)\"$")
@@ -74,26 +89,37 @@ public class CommonStepDefinitions {
     });
   }
 
-  @Then("^the \"([^\"]*)\" collection of the database will have the following entries:$")
-  public void the_collection_of_the_database_will_have_the_following_entries(String collectionName, List<Map<String, Object>> expectedEntriesList) throws Throwable {
-    // Write code here that turns the phrase above into concrete actions
-    // For automatic transformation, change DataTable to one of
-    // List<YourType>, List<List<E>>, List<Map<K,V>> or Map<K,V>.
-    // E,K,V must be a scalar (String, Integer, Date, enum etc)
+  @SuppressWarnings("unchecked")
+  @Then("^the \"([^\"]*)\" collection of the database will have an entry with the following attributes:$")
+  public void the_collection_of_the_database_will_have_an_entry_with_the_following_attributes(
+      String collectionName,
+      List<Map<String, Object>> expectedAttributesList
+  ) throws Throwable {
     MongoCollection collection = mongoDatabase.getCollection(collectionName);
     Assert.assertNotNull(String.format("Database collection '%s' not found.", collectionName), collection);
-    for (Map<String, Object> expectedRow : expectedEntriesList) {
-      Bson[] givenFilters = expectedRow.entrySet().stream()
-          .map(entry -> Filters.eq(entry.getKey(), entry.getValue()))
-          .collect(Collectors.toList())
-          .toArray(new Bson[0]);
-      Collection resultsList = collection.find(
-          Filters.and(
-              givenFilters
-          )
-      ).into(new ArrayList());
-      Assert.assertThat(String.format("Should only find one record for '%s'", expectedRow), resultsList.size(), Matchers.is(1));
+    List<Bson> filtersList = new ArrayList<>();
+    for (Map<String, Object> expectedAttribute : expectedAttributesList) {
+      String attributeType = ((String) expectedAttribute.get("Type")).toUpperCase();
+      if (TYPE_TRANSFORMER_MAP.containsKey(attributeType)) {
+        filtersList.add(
+            Filters.eq(
+                expectedAttribute.get("Name").toString(),
+                TYPE_TRANSFORMER_MAP.get(attributeType).apply(expectedAttribute.get("Value"))
+            )
+        );
+      } else {
+        throw new IllegalArgumentException(String.format("Type '%s' not supported - must be one of the following: %s", attributeType, TYPE_TRANSFORMER_MAP.keySet()));
+      }
     }
+    Collection resultsList = collection.find(Filters.and(filtersList)).into(new ArrayList());
+    Assert.assertThat(String.format("Should only find one record for '%s' with attributes %s", collectionName, expectedAttributesList), resultsList.size(), Matchers.is(1));
+  }
+
+  @Then("^the \"([^\"]*)\" collection will be empty$")
+  public void the_collection_will_be_empty(String collectionName) throws Throwable {
+    MongoCollection collection = mongoDatabase.getCollection(collectionName);
+    Assert.assertNotNull(String.format("Database collection '%s' not found.", collectionName), collection);
+    Assert.assertThat(String.format("Database collection '%s' should be empty.", collectionName), collection.count(), Matchers.is(0L));
   }
 
   private void clearDatabase(MongoDatabase database) {

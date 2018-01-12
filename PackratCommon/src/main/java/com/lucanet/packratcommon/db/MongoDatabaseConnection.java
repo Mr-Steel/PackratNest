@@ -3,7 +3,6 @@ package com.lucanet.packratcommon.db;
 import com.lucanet.packratcommon.model.HealthCheckHeader;
 import com.lucanet.packratcommon.model.HealthCheckRecord;
 import com.mongodb.*;
-import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Accumulators;
@@ -122,7 +121,7 @@ class MongoDatabaseConnection implements DatabaseConnection {
         )
     ).first();
     if (offsetDoc != null) {
-      return offsetDoc.getLong(OFFSETS_OFFSET_KEY);
+      return offsetDoc.get(OFFSETS_OFFSET_KEY, Number.class).longValue();
     } else {
       //Place the base offset value for this topic/partition in the database to establish
       //an entry

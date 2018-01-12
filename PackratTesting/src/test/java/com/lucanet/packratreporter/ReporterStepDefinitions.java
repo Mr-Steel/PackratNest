@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ContextConfiguration
-@TestPropertySource(locations = "classpath:packrat_reporter.properties")
+@TestPropertySource(locations = "classpath:packrat_reporter_test.properties")
 @AutoConfigureMockMvc
 public class ReporterStepDefinitions {
 

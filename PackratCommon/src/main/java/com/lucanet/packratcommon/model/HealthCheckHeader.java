@@ -25,13 +25,13 @@ public class HealthCheckHeader {
    * <p>
    * This is represented by a timestamp of seconds elapsed since the UNIX epoch.
    */
-  private long sessionTimestamp;
+  private Long sessionTimestamp;
   /**
    * The specific time when the HealthCheck record was produced.
    * <p>
    * This is represented by a timestamp of seconds elapsed since the UNIX epoch.
    */
-  private long healthCheckTimestamp;
+  private Long healthCheckTimestamp;
 
   // ============================  Constructors  ===========================79
   /**
@@ -77,7 +77,7 @@ public class HealthCheckHeader {
    * Get session timestamp.
    * @return {@link #sessionTimestamp}
    */
-  public long getSessionTimestamp() {
+  public Long getSessionTimestamp() {
     return sessionTimestamp;
   }
 
@@ -85,7 +85,7 @@ public class HealthCheckHeader {
    * Set session timestamp.
    * @param sessionTimestamp The new {@link #sessionTimestamp}.
    */
-  public void setSessionTimestamp(long sessionTimestamp) {
+  public void setSessionTimestamp(Long sessionTimestamp) {
     this.sessionTimestamp = sessionTimestamp;
   }
 
@@ -93,7 +93,7 @@ public class HealthCheckHeader {
    * Get HealthCheck timestamp.
    * @return {@link #healthCheckTimestamp}
    */
-  public long getHealthCheckTimestamp() {
+  public Long getHealthCheckTimestamp() {
     return healthCheckTimestamp;
   }
 
@@ -101,7 +101,7 @@ public class HealthCheckHeader {
    * Set the specific time when the HealthCheck record was produced.
    * @param healthCheckTimestamp The new {@link #healthCheckTimestamp}.
    */
-  public void setHealthCheckTimestamp(long healthCheckTimestamp) {
+  public void setHealthCheckTimestamp(Long healthCheckTimestamp) {
     this.healthCheckTimestamp = healthCheckTimestamp;
   }
 

@@ -116,7 +116,13 @@
       "systemUUID": "System-CCCC1111",
       "sessionTimestamp": 1111111111,
       "healthCheckTimestamp": 1111111111,
-      "data": { "true": true }
+      "data": [
+        "Line One",
+        "Line Two",
+        "Line Three",
+        "Line Four",
+        "Line Five"
+      ]
     }
   ],
   "_offsets": [

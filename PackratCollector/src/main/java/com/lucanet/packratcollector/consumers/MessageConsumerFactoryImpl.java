@@ -52,7 +52,15 @@ public class MessageConsumerFactoryImpl implements MessageConsumerFactory {
   public <T> MessageConsumer createMessageConsumer(String consumerName, Class<? extends Deserializer<T>> valueDeserializerClass, List<String> topicsList, int threadpoolSize) {
     Properties messageConsumerProperties = packratCollectorConfig.generateCommonProperties();
     messageConsumerProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDeserializerClass.getCanonicalName());
-    return new MessageConsumerImpl<T>(consumerName, messageConsumerProperties, topicsList, threadpoolSize, recordPersister);
+    return new MessageConsumerImpl<T>(
+        consumerName,
+        messageConsumerProperties,
+        topicsList,
+        packratCollectorConfig.getBrokerConnectTimeout(),
+        packratCollectorConfig.getBrokerPollTimeout(),
+        threadpoolSize,
+        recordPersister
+    );
   }
 
   // ========================== Protected Methods ==========================79

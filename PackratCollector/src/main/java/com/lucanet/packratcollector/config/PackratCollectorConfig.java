@@ -28,11 +28,19 @@ public class PackratCollectorConfig {
   /**
    * @see ConsumerConfig#AUTO_COMMIT_INTERVAL_MS_DOC
    */
-  private final Integer autoCommitInterval;
+  private final int autoCommitInterval;
   /**
    * @see ConsumerConfig#SESSION_TIMEOUT_MS_DOC
    */
-  private final Integer sessionTimeout;
+  private final int sessionTimeout;
+  /**
+   * @see com.lucanet.packratcollector.consumers.MessageConsumerImpl#brokerConnectTimeout
+   */
+  private final long brokerConnectTimeout;
+  /**
+   * @see com.lucanet.packratcollector.consumers.MessageConsumerImpl#brokerPollTimeout
+   */
+  private final long brokerPollTimeout;
 
   // ============================  Constructors  ===========================79
   /**
@@ -41,17 +49,22 @@ public class PackratCollectorConfig {
    * @param groupId The id of the Kafka message consumer group to which the Packrat Collector belongs.
    * @param autoCommitInterval The interval of the auto-commit message sent to the Kafka message server.
    * @param sessionTimeout The timeout interval for the Kafka message consumer session.
+   * @param brokerPollTimeout The timeout interval for polling the Kafka broker.
    */
   public PackratCollectorConfig(
       @Value("${packrat.bootstrapServers}") String bootstrapServers,
       @Value("${packrat.groupId}") String groupId,
-      @Value("${packrat.autoCommitInterval}") Integer autoCommitInterval,
-      @Value("${packrat.sessionTimeout}") Integer sessionTimeout
+      @Value("${packrat.autoCommitInterval}") int autoCommitInterval,
+      @Value("${packrat.sessionTimeout}") int sessionTimeout,
+      @Value("${packrat.broker.connectTimeout}") long brokerConnectTimeout,
+      @Value("${packrat.broker.pollTimeout}") long brokerPollTimeout
   ) {
     this.bootstrapServers = bootstrapServers;
     this.groupId = groupId;
     this.autoCommitInterval = autoCommitInterval;
     this.sessionTimeout = sessionTimeout;
+    this.brokerConnectTimeout = brokerConnectTimeout;
+    this.brokerPollTimeout = brokerPollTimeout;
   }
 
   // ============================ Public Methods ===========================79
@@ -68,6 +81,14 @@ public class PackratCollectorConfig {
     props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeout);
     props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, HealthCheckHeaderDeserializer.class.getCanonicalName());
     return props;
+  }
+
+  public long getBrokerConnectTimeout() {
+    return brokerConnectTimeout;
+  }
+
+  public long getBrokerPollTimeout() {
+    return brokerPollTimeout;
   }
 
   // ========================== Protected Methods ==========================79

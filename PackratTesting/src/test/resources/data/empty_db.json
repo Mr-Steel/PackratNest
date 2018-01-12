@@ -1,4 +1,12 @@
 {
+  "DynamicSystemStats": [
+  ],
+  "StaticSystemStats": [
+  ],
+  "SummaDatabase": [
+  ],
+  "TransactionStats": [
+  ],
   "_offsets": [
     {
       "topic": "DynamicSystemStats",

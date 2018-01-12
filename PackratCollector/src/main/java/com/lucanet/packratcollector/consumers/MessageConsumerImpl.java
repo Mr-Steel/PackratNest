@@ -12,8 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -46,6 +45,14 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
    */
   private final List<String> topicsList;
   /**
+   * The timeout interval for connecting to the Kafka broker.
+   */
+  private final long brokerConnectTimeout;
+  /**
+   * The timeout interval for polling the Kafka broker.
+   */
+  private final long brokerPollTimeout;
+  /**
    * Thread pool for executing the HealthCheck message consumption callback separately from the message retrieval thread.
    */
   private final ExecutorService threadPoolExecutor;
@@ -64,6 +71,8 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
    * @param consumerName The name of the MessageConsumerImpl instance.
    * @param kafkaConsumerProperties The Kafka message consumer for retrieving HealthCheck messages from the Kafka server.
    * @param topicsList List of Kafka message topics that the {@link #kafkaConsumer} will subscribe to.
+   * @param brokerConnectTimeout The timeout interval for connecting to the Kafka broker.
+   * @param brokerPollTimeout The timeout interval for polling the Kafka broker.
    * @param threadPoolSize Number of threads that the {@link #threadPoolExecutor} will possess.
    * @param recordPersister Entity that will persist retrieved HealthCheck messages for later analysis.
    */
@@ -71,6 +80,8 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
       String consumerName,
       Properties kafkaConsumerProperties,
       List<String> topicsList,
+      long brokerConnectTimeout,
+      long brokerPollTimeout,
       int threadPoolSize,
       RecordPersister recordPersister
   ) {
@@ -79,6 +90,8 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
     this.kafkaConsumer = new KafkaConsumer<>(kafkaConsumerProperties);
     this.isRunning = new AtomicBoolean(false);
     this.topicsList = topicsList;
+    this.brokerConnectTimeout = brokerConnectTimeout;
+    this.brokerPollTimeout = brokerPollTimeout;
     this.threadPoolExecutor = Executors.newFixedThreadPool(threadPoolSize);
     this.recordPersister = recordPersister;
     this.runnerThread = new Thread(this::runConsumer);
@@ -116,35 +129,56 @@ public class MessageConsumerImpl<T> implements MessageConsumer {
    * Execute the message retrieval sequence, including the retrieval loop.
    */
   private void runConsumer() {
-    kafkaConsumer.subscribe(topicsList);
-    kafkaConsumer.poll(0L);
-    //Set the offsets for the partitions belonging to each HealthCheck topic
-    topicsList.forEach(topic ->
-        kafkaConsumer.partitionsFor(topic).forEach(partitionInfo -> {
-          TopicPartition topicPartition = new TopicPartition(partitionInfo.topic(), partitionInfo.partition());
-          long topicPartitionOffset = recordPersister.getOffset(topicPartition);
-          logger.info("{} setting offset to {} for topic '{}' partition {}", consumerName, topicPartitionOffset, partitionInfo.topic(), partitionInfo.partition());
-          kafkaConsumer.seek(topicPartition, topicPartitionOffset);
-        })
-    );
-    isRunning.set(true);
-
-    //Run the message retrieval loop
-    while (isRunning.get()) {
+    try {
+      kafkaConsumer.subscribe(topicsList);
       try {
-        logger.debug("{} polling Kafka Server...", consumerName);
-        ConsumerRecords<HealthCheckHeader, T> records = kafkaConsumer.poll(1000L);
-        logger.debug("Records polled for {}: {}", consumerName, records.count());
-        if (!records.isEmpty()) {
-          threadPoolExecutor.submit(() -> processMessages(records));
-        }
-      } catch (Exception e) {
-        logger.error("Error polling messages in {}: {}", consumerName, e.getMessage());
+        logger.debug("Connecting to broker with a timeout of {}", brokerConnectTimeout);
+        CompletableFuture.supplyAsync(() -> kafkaConsumer.poll(1000L))
+            .get(brokerConnectTimeout, TimeUnit.MILLISECONDS);
+      } catch (TimeoutException te) {
+        logger.error("Timed out ({}ms) initial connection for {}", brokerConnectTimeout, consumerName);
+        return;
       }
-    }
+      //Set the offsets for the partitions belonging to each HealthCheck topic
+      topicsList.forEach(topic ->
+          kafkaConsumer.partitionsFor(topic).forEach(partitionInfo -> {
+            TopicPartition topicPartition = new TopicPartition(partitionInfo.topic(), partitionInfo.partition());
+            long topicPartitionOffset = recordPersister.getOffset(topicPartition);
+            logger.info("{} setting offset to {} for topic '{}' partition {}", consumerName, topicPartitionOffset, partitionInfo.topic(), partitionInfo.partition());
+            kafkaConsumer.seek(topicPartition, topicPartitionOffset);
+          })
+      );
+      isRunning.set(true);
 
-    //Message retrieval loop has been terminated - close the Kafka message consumer
-    kafkaConsumer.close();
+      //Run the message retrieval loop
+      try {
+        while (isRunning.get()) {
+          try {
+            logger.debug("{} polling Kafka Server...", consumerName);
+            ConsumerRecords<HealthCheckHeader, T> records = CompletableFuture.supplyAsync(() -> kafkaConsumer.poll(1000L))
+                .get(brokerPollTimeout, TimeUnit.MILLISECONDS);
+            logger.debug("Records polled for {}: {}", consumerName, records.count());
+            if (!records.isEmpty()) {
+              threadPoolExecutor.submit(() -> processMessages(records));
+            }
+          } catch (TimeoutException te) {
+            logger.error("Timed out ({}ms) polling messages for {}", brokerPollTimeout, consumerName);
+            isRunning.set(false);
+          } catch (Exception e) {
+            logger.error(String.format("Error polling messages for %s:", consumerName), e);
+          }
+        }
+      } finally {
+        //Message retrieval loop has been terminated - close the Kafka message consumer
+        try {
+          kafkaConsumer.close();
+        } catch (Exception e) {
+          //No-Op - shutting down anyway
+        }
+      }
+    } catch (Exception e) {
+      logger.error(String.format("Error in runConsumer() for %s", consumerName), e);
+    }
   }
 
   /**
