@@ -1,12 +1,11 @@
 package com.lucanet.packratcollector.deserializers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -14,7 +13,7 @@ import java.util.Map;
  * @see Deserializer
  * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
  */
-public class JSONDeserializer implements Deserializer<Map<String, Object>> {
+public class JSONDeserializer implements Deserializer<JsonNode> {
   // =========================== Class Variables ===========================79
   // ============================ Class Methods ============================79
   // ============================   Variables    ===========================79
@@ -26,10 +25,6 @@ public class JSONDeserializer implements Deserializer<Map<String, Object>> {
    * Mapper that will translate raw byte data to a map of objects.
    */
   private final ObjectMapper objectMapper;
-  /**
-   * Type reference for the {@link #objectMapper} to translate the raw byte data.
-   */
-  private final TypeReference<HashMap<String, Object>> typeReference;
 
   // ============================  Constructors  ===========================79
   /**
@@ -38,7 +33,6 @@ public class JSONDeserializer implements Deserializer<Map<String, Object>> {
   public JSONDeserializer() {
     logger = LoggerFactory.getLogger(JSONDeserializer.class);
     objectMapper = new ObjectMapper();
-    typeReference = new TypeReference<HashMap<String, Object>>(){};
   }
 
   // ============================ Public Methods ===========================79
@@ -59,11 +53,17 @@ public class JSONDeserializer implements Deserializer<Map<String, Object>> {
    * @return The JSON data represented by a map of objects.
    */
   @Override
-  public Map<String, Object> deserialize(String topic, byte[] data) {
+  public JsonNode deserialize(String topic, byte[] data) {
     try {
-      return objectMapper.readValue(data, typeReference);
+      JsonNode deserializedData = objectMapper.readTree(data);
+      if (!deserializedData.isNull()) {
+        return deserializedData;
+      } else {
+        logger.warn("No data parsed for '{}'", topic);
+        return null;
+      }
     } catch (Exception e) {
-      logger.error("Error parsing value for '{}' message: {}", topic, e.getMessage());
+      logger.error(String.format("Error parsing value for '%s':", topic), e);
       return null;
     }
   }

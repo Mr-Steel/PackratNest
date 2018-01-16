@@ -2,7 +2,10 @@ package com.lucanet.packratreporter.controllers;
 
 import com.lucanet.packratcommon.aspects.LogExecution;
 import com.lucanet.packratcommon.db.DatabaseConnection;
-import io.swagger.annotations.*;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;

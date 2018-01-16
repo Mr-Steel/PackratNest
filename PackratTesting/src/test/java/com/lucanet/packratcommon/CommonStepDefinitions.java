@@ -145,7 +145,5 @@ public class CommonStepDefinitions {
     COLLECTIONS_LIST.forEach(collectionName ->
       database.getCollection(collectionName).deleteMany(new Document())
     );
-    long offsetEntriesCount = database.getCollection(MongoDatabaseConnection.OFFSETS_COLLECTION_NAME)
-        .count();
   }
 }

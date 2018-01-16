@@ -38,10 +38,10 @@ public class CollectorStepDefinitions {
   private static final List<String> FILE_DATA_TOPICS = Collections.singletonList("TransactionStats");
 
   private ObjectMapper objectMapper = new ObjectMapper();
-  private Map<String, Map<HealthCheckHeader, Map<String, Object>>> jsonMessagesMap = new HashMap<>();
+  private Map<String, Map<HealthCheckHeader, JsonNode>> jsonMessagesMap = new HashMap<>();
   private Map<String, Map<HealthCheckHeader, List<String>>> fileMessagesMap = new HashMap<>();
 
-  private KafkaTemplate<HealthCheckHeader, Map<String, Object>> jsonMessagesTemplate;
+  private KafkaTemplate<HealthCheckHeader, JsonNode> jsonMessagesTemplate;
   private KafkaTemplate<HealthCheckHeader, List<String>> fileMessagesTemplate;
 
   @After
@@ -59,7 +59,7 @@ public class CollectorStepDefinitions {
     Map<String, Object> senderProperties = KafkaTestUtils.senderProps(PackratCollectorTest.embeddedKafkaWrapper.getBrokers());
     senderProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JSONObjectSerializer.class);
     senderProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JSONObjectSerializer.class);
-    ProducerFactory<HealthCheckHeader, Map<String, Object>> jsonMessageProducerFactory =
+    ProducerFactory<HealthCheckHeader, JsonNode> jsonMessageProducerFactory =
         new DefaultKafkaProducerFactory<>(senderProperties);
     jsonMessagesTemplate = new KafkaTemplate<>(jsonMessageProducerFactory);
     ProducerFactory<HealthCheckHeader, List<String>> fileMessageProducerFactory =
@@ -74,9 +74,9 @@ public class CollectorStepDefinitions {
     JsonNode messagesNode = objectMapper.readTree(ClassLoader.getSystemResourceAsStream(String.format("messages/%s", messagesFileName)));
     //Populate JSON-based messages
     JSON_DATA_TOPICS.forEach(jsonDataTopic -> {
-      Map<HealthCheckHeader, Map<String, Object>> topicMap = new HashMap<>();
+      Map<HealthCheckHeader, JsonNode> topicMap = new HashMap<>();
       messagesNode.get(jsonDataTopic).elements().forEachRemaining(messageNode ->
-          populateJsonEntry(topicMap, messageNode, dataNode -> objectMapper.convertValue(dataNode, Map.class))
+          populateJsonEntry(topicMap, messageNode, dataNode -> objectMapper.convertValue(dataNode, JsonNode.class))
       );
       jsonMessagesMap.put(jsonDataTopic, topicMap);
     });
