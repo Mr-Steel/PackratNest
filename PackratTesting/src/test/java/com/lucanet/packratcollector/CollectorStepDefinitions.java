@@ -134,6 +134,13 @@ public class CollectorStepDefinitions {
             healthCheckTimestampNode.longValue() :
             null
     );
+    //Set Version
+    JsonNode versionNode = messageNode.get(HealthCheckRecord.VERSION);
+    healthCheckHeader.setVersion(
+        !versionNode.isNull() ?
+            versionNode.intValue() :
+            null
+    );
     topicMap.put(healthCheckHeader, dataTransformerFunction.apply(messageNode.get(HealthCheckRecord.DATA)));
   }
 }

@@ -31,6 +31,11 @@ public class HealthCheckRecord<T> extends Document {
    */
   public static final String HEALTHCHECK_TIMESTAMP = "healthCheckTimestamp";
   /**
+   * "version" key for usage in the MongoDB database.
+   * @see HealthCheckHeader#version
+   */
+  public static final String VERSION = "version";
+  /**
    * "data" key for usage in the MongoDB database.
    */
   public static final String DATA = "data";
@@ -50,6 +55,7 @@ public class HealthCheckRecord<T> extends Document {
     put(SYSTEM_UUID, healthCheckHeader.getSystemUUID());
     put(SESSION_TIMESTAMP, healthCheckHeader.getSessionTimestamp());
     put(HEALTHCHECK_TIMESTAMP, healthCheckHeader.getHealthCheckTimestamp());
+    put(VERSION, healthCheckHeader.getVersion());
     put(DATA, data);
   }
 

@@ -32,29 +32,33 @@ Feature: HealthCheck Message Collection
       | partition | 0                | Integer |
       | offset    | 1                | Long    |
     And the "DynamicSystemStats" collection of the database will have an entry with the following attributes:
-      | Name                 | Value           | Type   |
-      | serialId             | Serial-AAAA     | String |
-      | systemUUID           | System-AAAA1111 | String |
-      | sessionTimestamp     | 1111111111      | Long   |
-      | healthCheckTimestamp | 1111111111      | Long   |
+      | Name                 | Value           | Type    |
+      | serialId             | Serial-AAAA     | String  |
+      | systemUUID           | System-AAAA1111 | String  |
+      | sessionTimestamp     | 1111111111      | Long    |
+      | healthCheckTimestamp | 1111111111      | Long    |
+      | version              | 1               | Integer |
     And the "StaticSystemStats" collection of the database will have an entry with the following attributes:
-      | Name                 | Value           | Type   |
-      | serialId             | Serial-AAAA     | String |
-      | systemUUID           | System-AAAA2222 | String |
-      | sessionTimestamp     | 1111111112      | Long   |
-      | healthCheckTimestamp | 1111111112      | Long   |
+      | Name                 | Value           | Type    |
+      | serialId             | Serial-AAAA     | String  |
+      | systemUUID           | System-AAAA2222 | String  |
+      | sessionTimestamp     | 1111111112      | Long    |
+      | healthCheckTimestamp | 1111111112      | Long    |
+      | version              | 1               | Integer |
     And the "SummaDatabase" collection of the database will have an entry with the following attributes:
-      | Name                 | Value           | Type   |
-      | serialId             | Serial-BBBB     | String |
-      | systemUUID           | System-BBBB1111 | String |
-      | sessionTimestamp     | 1111111123      | Long   |
-      | healthCheckTimestamp | 1111111123      | Long   |
+      | Name                 | Value           | Type    |
+      | serialId             | Serial-BBBB     | String  |
+      | systemUUID           | System-BBBB1111 | String  |
+      | sessionTimestamp     | 1111111123      | Long    |
+      | healthCheckTimestamp | 1111111123      | Long    |
+      | version              | 1               | Integer |
     And the "TransactionStats" collection of the database will have an entry with the following attributes:
-      | Name                 | Value           | Type   |
-      | serialId             | Serial-CCCC     | String |
-      | systemUUID           | System-CCCC1111 | String |
-      | sessionTimestamp     | 1111111111      | Long   |
-      | healthCheckTimestamp | 1111111111      | Long   |
+      | Name                 | Value           | Type    |
+      | serialId             | Serial-CCCC     | String  |
+      | systemUUID           | System-CCCC1111 | String  |
+      | sessionTimestamp     | 1111111111      | Long    |
+      | healthCheckTimestamp | 1111111111      | Long    |
+      | version              | 1               | Integer |
 
   @Negative
   Scenario: Receiving Duplicate HealthCheck Messages
@@ -85,19 +89,21 @@ Feature: HealthCheck Message Collection
     #If the duplicate message for this entry is not rejected, then this step will fail, as there will be
     #two such entries in the collection
     And the "DynamicSystemStats" collection of the database will have an entry with the following attributes:
-      | Name                 | Value           | Type   |
-      | serialId             | Serial-AAAA     | String |
-      | systemUUID           | System-AAAA1111 | String |
-      | sessionTimestamp     | 1111111111      | Long   |
-      | healthCheckTimestamp | 1111111111      | Long   |
+      | Name                 | Value           | Type    |
+      | serialId             | Serial-AAAA     | String  |
+      | systemUUID           | System-AAAA1111 | String  |
+      | sessionTimestamp     | 1111111111      | Long    |
+      | healthCheckTimestamp | 1111111111      | Long    |
+      | version              | 1               | Integer |
     #If the duplicate message for this entry is not rejected, then this step will fail, as there will be
     #two such entries in the collection
     And the "StaticSystemStats" collection of the database will have an entry with the following attributes:
-      | Name                 | Value           | Type   |
-      | serialId             | Serial-AAAA     | String |
-      | systemUUID           | System-AAAA2222 | String |
-      | sessionTimestamp     | 1111111112      | Long   |
-      | healthCheckTimestamp | 1111111112      | Long   |
+      | Name                 | Value           | Type    |
+      | serialId             | Serial-AAAA     | String  |
+      | systemUUID           | System-AAAA2222 | String  |
+      | sessionTimestamp     | 1111111112      | Long    |
+      | healthCheckTimestamp | 1111111112      | Long    |
+      | version              | 1               | Integer |
 
   @Negative
   Scenario: Rejecting Badly-Formatted HealthCheck Messages
@@ -114,17 +120,17 @@ Feature: HealthCheck Message Collection
       | Name      | Value             | Type    |
       | topic     | StaticSystemStats | String  |
       | partition | 0                 | Integer |
-      | offset    | 1                 | Long    |
+      | offset    | 4                 | Long    |
     And the "_offsets" collection of the database will have an entry with the following attributes:
       | Name      | Value         | Type    |
       | topic     | SummaDatabase | String  |
       | partition | 0             | Integer |
-      | offset    | 1             | Long    |
+      | offset    | 2             | Long    |
     And the "_offsets" collection of the database will have an entry with the following attributes:
       | Name      | Value            | Type    |
       | topic     | TransactionStats | String  |
       | partition | 0                | Integer |
-      | offset    | 1                | Long    |
+      | offset    | 2                | Long    |
     And the "DynamicSystemStats" collection will be empty
     And the "StaticSystemStats" collection will be empty
     And the "SummaDatabase" collection will be empty

@@ -1,11 +1,13 @@
 package com.lucanet.packratcollector.deserializers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -13,7 +15,7 @@ import java.util.Map;
  * @see Deserializer
  * @author <a href="mailto:severne@lucanet.com">Severn Everett</a>
  */
-public class JSONDeserializer implements Deserializer<JsonNode> {
+public class JSONDeserializer implements Deserializer<Map<String, Object>> {
   // =========================== Class Variables ===========================79
   // ============================ Class Methods ============================79
   // ============================   Variables    ===========================79
@@ -25,6 +27,10 @@ public class JSONDeserializer implements Deserializer<JsonNode> {
    * Mapper that will translate raw byte data to a map of objects.
    */
   private final ObjectMapper objectMapper;
+  /**
+   * Type reference for the {@link #objectMapper} to translate the raw byte data.
+   */
+  private final TypeReference<HashMap<String, Object>> typeReference;
 
   // ============================  Constructors  ===========================79
   /**
@@ -33,6 +39,7 @@ public class JSONDeserializer implements Deserializer<JsonNode> {
   public JSONDeserializer() {
     logger = LoggerFactory.getLogger(JSONDeserializer.class);
     objectMapper = new ObjectMapper();
+    typeReference = new TypeReference<HashMap<String, Object>>() { };
   }
 
   // ============================ Public Methods ===========================79
@@ -53,11 +60,12 @@ public class JSONDeserializer implements Deserializer<JsonNode> {
    * @return The JSON data represented by a map of objects.
    */
   @Override
-  public JsonNode deserialize(String topic, byte[] data) {
+  public Map<String, Object> deserialize(String topic, byte[] data) {
     try {
       JsonNode deserializedData = objectMapper.readTree(data);
       if (!deserializedData.isNull()) {
-        return deserializedData;
+        //Convert to a POJO HashMap, as MongoDB cannot read JsonNode entities properly
+        return objectMapper.convertValue(deserializedData, typeReference);
       } else {
         logger.warn("No data parsed for '{}'", topic);
         return null;

@@ -2,6 +2,7 @@ package com.lucanet.packratcommon.model;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -42,6 +43,12 @@ public class HealthCheckHeader {
    */
   @NotNull
   private Long healthCheckTimestamp;
+  /**
+   * Version of the HealthCheck record.
+   */
+  @NotNull
+  @Min(1)
+  private Integer version;
 
   // ============================  Constructors  ===========================79
   /**
@@ -113,6 +120,20 @@ public class HealthCheckHeader {
    */
   public void setHealthCheckTimestamp(Long healthCheckTimestamp) {
     this.healthCheckTimestamp = healthCheckTimestamp;
+  }
+  /**
+   * Get HealthCheck record version.
+   * @return {@link #version}
+   */
+  public Integer getVersion() {
+    return version;
+  }
+  /**
+   * Set the HealthCheck record version.
+   * @param version The new {@link #version}.
+   */
+  public void setVersion(Integer version) {
+    this.version = version;
   }
 
   /**

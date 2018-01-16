@@ -5,6 +5,7 @@
       "systemUUID": "System-AAAA1111",
       "sessionTimestamp": 1111111111,
       "healthCheckTimestamp": 1111111111,
+      "version": 1,
       "data": { "true": true }
     }
   ],
@@ -14,6 +15,7 @@
       "systemUUID": "System-AAAA2222",
       "sessionTimestamp": 1111111112,
       "healthCheckTimestamp": 1111111112,
+      "version": 1,
       "data": { "true": true }
     }
   ],
@@ -23,6 +25,7 @@
       "systemUUID": "System-BBBB1111",
       "sessionTimestamp": 1111111123,
       "healthCheckTimestamp": 1111111123,
+      "version": 1,
       "data": { "true": true }
     }
   ],
@@ -32,6 +35,7 @@
       "systemUUID": "System-CCCC1111",
       "sessionTimestamp": 1111111111,
       "healthCheckTimestamp": 1111111111,
+      "version": 1,
       "data": [
 		"Line One",
 		"Line Two",
