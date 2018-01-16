@@ -10,7 +10,7 @@ Feature: HealthCheck Message Collection
     Given the database instance is populated with HealthCheck data from "empty_db.json"
       And a set of messages defined in "healthcheck_messages.json"
     When the messages are sent to the Apache Kafka Server instance
-      And I wait 2 seconds
+      And I wait 5 seconds
     Then the "_offsets" collection of the database will have an entry with the following attributes:
       | Name      | Value              | Type    |
       | topic     | DynamicSystemStats | String  |
@@ -61,7 +61,7 @@ Feature: HealthCheck Message Collection
     Given the database instance is populated with HealthCheck data from "empty_db.json"
       And a set of messages defined in "duplicate_messages.json"
     When the messages are sent to the Apache Kafka Server instance
-      And I wait 2 seconds
+      And I wait 5 seconds
     Then the "_offsets" collection of the database will have an entry with the following attributes:
       | Name      | Value              | Type    |
       | topic     | DynamicSystemStats | String  |
@@ -104,7 +104,7 @@ Feature: HealthCheck Message Collection
     Given the database instance is populated with HealthCheck data from "empty_db.json"
       And a set of messages defined in "invalid_messages.json"
     When the messages are sent to the Apache Kafka Server instance
-      And I wait 2 seconds
+      And I wait 5 seconds
     Then the "_offsets" collection of the database will have an entry with the following attributes:
       | Name      | Value              | Type    |
       | topic     | DynamicSystemStats | String  |

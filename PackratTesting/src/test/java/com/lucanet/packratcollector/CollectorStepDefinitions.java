@@ -13,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -51,22 +50,13 @@ public class CollectorStepDefinitions {
     jsonMessagesMap.clear();
     fileMessagesTemplate = null;
     fileMessagesMap.clear();
-    //Kludge to purge the Kafka message topics. Basically, destroy the existing KafkaEmbedded
-    //instance and create a new one in its place
-    PackratCollectorTest.kafkaEmbedded.destroy();
-    PackratCollectorTest.kafkaEmbedded = new KafkaEmbedded(
-        1,
-        true,
-        1,
-        "DynamicSystemStats", "StaticSystemStats", "SummaDatabase", "TransactionStats"
-    );
-    PackratCollectorTest.kafkaEmbedded.before();
+    PackratCollectorTest.embeddedKafkaWrapper.reset();
     Thread.sleep(1000L);
   }
 
   @Given("^a connection to the Kafka broker$")
   public void a_connection_to_the_kafka_broker() throws Throwable {
-    Map<String, Object> senderProperties = KafkaTestUtils.senderProps(PackratCollectorTest.kafkaEmbedded.getBrokersAsString());
+    Map<String, Object> senderProperties = KafkaTestUtils.senderProps(PackratCollectorTest.embeddedKafkaWrapper.getBrokers());
     senderProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JSONObjectSerializer.class);
     senderProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JSONObjectSerializer.class);
     ProducerFactory<HealthCheckHeader, Map<String, Object>> jsonMessageProducerFactory =

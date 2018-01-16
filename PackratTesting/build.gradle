@@ -9,6 +9,25 @@ repositories {
     mavenCentral()
 }
 
+test {
+    doLast {
+        File[] kafkaTmpDirs = new File(System.getProperty('java.io.tmpdir')).listFiles(new FileFilter() {
+            @Override
+            boolean accept(File file) {
+                return file.isDirectory() && file.name.contains("kafka-")
+            }
+        })
+        kafkaTmpDirs.each { tmpDir ->
+            try {
+                println "Deleting temporary Kafka directory ${tmpDir}"
+                delete(tmpDir)
+            } catch (Exception e) {
+                println "Error deleting ${tmpDir}: ${e}"
+            }
+        }
+    }
+}
+
 ext.cucumberVersion = '1.2.5'
 ext.curatorVersion = '4.0.0'
 ext.springKafkaVersion = '2.1.0.RELEASE'

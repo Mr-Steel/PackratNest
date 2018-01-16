@@ -1,11 +1,11 @@
 package com.lucanet.packratcollector;
 
+import com.lucanet.util.EmbeddedKafkaWrapper;
 import com.lucanet.util.MongoDaemon;
 import cucumber.api.CucumberOptions;
 import cucumber.api.junit.Cucumber;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
@@ -32,7 +32,7 @@ public class PackratCollectorTest {
   public static MongoDaemon mongoDaemon = new MongoDaemon();
 
   @ClassRule
-  public static KafkaEmbedded kafkaEmbedded = new KafkaEmbedded(
+  public static EmbeddedKafkaWrapper embeddedKafkaWrapper = new EmbeddedKafkaWrapper(
       1,
       true,
       1,
