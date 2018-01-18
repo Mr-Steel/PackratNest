@@ -61,19 +61,18 @@ public class JSONDeserializer implements Deserializer<Map<String, Object>> {
    */
   @Override
   public Map<String, Object> deserialize(String topic, byte[] data) {
-    try {
-      JsonNode deserializedData = objectMapper.readTree(data);
-      if (!deserializedData.isNull()) {
-        //Convert to a POJO HashMap, as MongoDB cannot read JsonNode entities properly
-        return objectMapper.convertValue(deserializedData, typeReference);
-      } else {
-        logger.warn("No data parsed for '{}'", topic);
-        return null;
+    Map<String, Object> deserializedJSON = null;
+    if ((data != null) && (data.length > 0)) { //Only attempt to deserialize if data is a non-empty byte array
+      try {
+        Map<String, Object> deserializedData = objectMapper.readValue(data, typeReference);
+        if (!deserializedData.isEmpty()) {
+          deserializedJSON = deserializedData;
+        }
+      } catch (Exception e) {
+        logger.error(String.format("Error parsing value for '%s':", topic), e);
       }
-    } catch (Exception e) {
-      logger.error(String.format("Error parsing value for '%s':", topic), e);
-      return null;
     }
+    return deserializedJSON;
   }
 
   /**

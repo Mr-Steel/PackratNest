@@ -67,22 +67,24 @@ public class HealthCheckHeaderDeserializer implements Deserializer<HealthCheckHe
    */
   @Override
   public HealthCheckHeader deserialize(String topic, byte[] data) {
-    try {
-      HealthCheckHeader healthCheckHeader = objectMapper.readValue(data, HealthCheckHeader.class);
-      Set<ConstraintViolation<HealthCheckHeader>> violations = validator.validate(healthCheckHeader);
-      if (violations.isEmpty()) {
-        return healthCheckHeader;
-      } else {
-        String violationsStr = violations.stream()
-            .map(violation -> String.format("%s: %s", violation.getPropertyPath(), violation.getMessage()))
-            .collect(Collectors.joining("; "));
-        logger.error("Constraint violations for deserializing HealthCheckHeader: {}", violationsStr);
-        return null;
+    HealthCheckHeader deserializedHeader = null;
+    if ((data != null) && (data.length > 0)) { //Only attempt to deserialize if data is a non-empty byte array
+      try {
+        HealthCheckHeader healthCheckHeader = objectMapper.readValue(data, HealthCheckHeader.class);
+        Set<ConstraintViolation<HealthCheckHeader>> violations = validator.validate(healthCheckHeader);
+        if (violations.isEmpty()) {
+          deserializedHeader = healthCheckHeader;
+        } else {
+          String violationsStr = violations.stream()
+              .map(violation -> String.format("%s: %s", violation.getPropertyPath(), violation.getMessage()))
+              .collect(Collectors.joining("; "));
+          logger.warn("Constraint violations for deserializing HealthCheckHeader: {}", violationsStr);
+        }
+      } catch (Exception e) {
+        logger.error("Error deserializing HealthCheckHeader:", e);
       }
-    } catch (IOException ioe) {
-      logger.error("Error deserializing HealthCheckHeader: {}", ioe.getMessage());
-      return null;
     }
+    return deserializedHeader;
   }
 
   /**

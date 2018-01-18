@@ -61,12 +61,18 @@ public class FileLinesDeserializer implements Deserializer<List<String>> {
    */
   @Override
   public List<String> deserialize(String topic, byte[] data) {
-    try {
-      return objectMapper.readValue(data, typeReference);
-    } catch (Exception e) {
-      logger.error("Error parsing value for '{}' message: {}", topic, e.getMessage());
-      return null;
+    List<String> deserializedList = null;
+    if ((data != null) && (data.length > 0)) { //Only attempt to deserialize if data is a non-empty byte array
+      try {
+        List<String> fileLines = objectMapper.readValue(data, typeReference);
+        if (!fileLines.isEmpty()) {
+          deserializedList = fileLines;
+        }
+      } catch (Exception e) {
+        logger.error(String.format("Error parsing value for '%s':", topic), e);
+      }
     }
+    return deserializedList;
   }
 
   /**

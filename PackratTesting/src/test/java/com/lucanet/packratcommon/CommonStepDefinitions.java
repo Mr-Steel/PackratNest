@@ -49,7 +49,7 @@ public class CommonStepDefinitions {
   @After
   public void teardown() {
     if (mongoDatabase != null) {
-      clearDatabase(mongoDatabase);
+      //clearDatabase(mongoDatabase);
       mongoDatabase = null;
     }
     if (mongoClient != null) {

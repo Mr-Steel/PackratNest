@@ -17,7 +17,6 @@ import org.springframework.context.annotation.Configuration;
 import javax.annotation.PreDestroy;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Runner object for starting the PackratCollector.

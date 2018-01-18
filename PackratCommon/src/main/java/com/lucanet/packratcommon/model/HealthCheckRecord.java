@@ -50,7 +50,7 @@ public class HealthCheckRecord<T> extends Document {
    * @see HealthCheckHeader
    */
   public HealthCheckRecord(HealthCheckHeader healthCheckHeader, T data) {
-    put("_id", healthCheckHeader.toString());
+    put("_id", healthCheckHeader.getUniqueId());
     put(SERIAL_ID, healthCheckHeader.getSerialId());
     put(SYSTEM_UUID, healthCheckHeader.getSystemUUID());
     put(SESSION_TIMESTAMP, healthCheckHeader.getSessionTimestamp());
