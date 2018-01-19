@@ -1,11 +1,14 @@
 package com.lucanet.packratcollector.deserializers;
 
+import org.junit.jupiter.api.DisplayName;
+
 import java.util.*;
 import java.util.stream.Stream;
 
 /**
  * Implementation of {@link AbstractDeserializerTest} for testing the {@link JSONDeserializer}
  */
+@DisplayName("Validate the JSON Deserializer")
 class JSONDeserializerTest extends AbstractDeserializerTest<Map<String, Object>> {
 
   JSONDeserializerTest() {

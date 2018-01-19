@@ -1,27 +1,41 @@
 package com.lucanet.packratcollector.deserializers;
 
 import com.lucanet.packratcommon.model.HealthCheckHeader;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Implementation of {@link AbstractDeserializerTest} for testing the {@link HealthCheckHeaderDeserializer}
  */
+@DisplayName("Validate the HealthCheckHeader Deserializer")
 class HealthCheckHeaderDeserializerTest extends AbstractDeserializerTest<HealthCheckHeader> {
 
   HealthCheckHeaderDeserializerTest() {
     super(new HealthCheckHeaderDeserializer());
   }
 
-  @Test
-  void invalidHeaderTest() throws Exception {
-    List<HealthCheckHeader> invalidHeaderList = Arrays.asList(
+  @Override
+  protected HealthCheckHeader getNormalInstance() {
+    return generateHealthCheckHeader(
+        "Serial-AAAA",
+        "System-AAAA1111",
+        1111111111L,
+        1111111111L,
+        1
+    );
+  }
+
+  @Override
+  protected Stream<Object> getInvalidTypes() {
+    return Stream.of(
+        //Test invalid object types
+        "Invalid One",
+        2,
+        true,
+        new HashMap<>(),
+        //Test HealthCheckHeaders that should fail validation
         generateHealthCheckHeader(
             null,
             "System-AAAA1111",
@@ -64,34 +78,6 @@ class HealthCheckHeaderDeserializerTest extends AbstractDeserializerTest<HealthC
             1111111111L,
             -1
         )
-    );
-    for (HealthCheckHeader invalidHeader : invalidHeaderList) {
-      HealthCheckHeader deserializedHeader = deserializer.deserialize(
-          "Test Topic",
-          objectMapper.writeValueAsBytes(invalidHeader)
-      );
-      assertNull(deserializedHeader, () -> String.format("Object %s did not deserialize to null as expected!", deserializedHeader));
-    }
-  }
-
-  @Override
-  protected HealthCheckHeader getNormalInstance() {
-    return generateHealthCheckHeader(
-        "Serial-AAAA",
-        "System-AAAA1111",
-        1111111111L,
-        1111111111L,
-        1
-    );
-  }
-
-  @Override
-  protected Stream<Object> getInvalidTypes() {
-    return Stream.of(
-        "Invalid One",
-        2,
-        true,
-        new HashMap<>()
     );
   }
 

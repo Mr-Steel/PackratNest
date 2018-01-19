@@ -1,5 +1,7 @@
 package com.lucanet.packratcollector.deserializers;
 
+import org.junit.jupiter.api.DisplayName;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,6 +11,7 @@ import java.util.stream.Stream;
 /**
  * Implementation of {@link AbstractDeserializerTest} for testing the {@link FileLinesDeserializer}
  */
+@DisplayName("Validate the FileLines Deserializer")
 class FileLinesDeserializerTest extends AbstractDeserializerTest<List<String>> {
 
   FileLinesDeserializerTest() {
